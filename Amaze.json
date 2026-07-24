@@ -1,0 +1,10 @@
+{
+    "env": [
+        {
+            "ASSETLIB": "/path/to/Amaze"
+        }
+    ],
+    "path": [
+        "$ASSETLIB"
+    ]
+}

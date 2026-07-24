@@ -43,13 +43,13 @@ It began as [egMatLib](https://github.com/eglaubauf/egMatLib), Elmar Glaubauf's 
 
 ## Installation
 
-1. Copy (or clone) this repo to a folder of your choice, e.g. `/path/to/AssetLib`.
-2. Create a package file in a folder Houdini scans (e.g. `$HOUDINI_USER_PREF_DIR/packages/AssetLib.json`) — a template ships at the repo root:
+1. Copy (or clone) this repo to a folder of your choice, e.g. `/path/to/Amaze`.
+2. Create a package file in a folder Houdini scans (e.g. `$HOUDINI_USER_PREF_DIR/packages/Amaze.json`) — a template ships at the repo root (`Amaze.json`); point `ASSETLIB` at the folder from step 1:
 
 ```json
 {
     "env": [
-        { "ASSETLIB": "/path/to/AssetLib" }
+        { "ASSETLIB": "/path/to/Amaze" }
     ],
     "path": [ "$ASSETLIB" ]
 }
