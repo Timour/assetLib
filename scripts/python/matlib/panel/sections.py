@@ -25,6 +25,7 @@ inlined into the sections later.
 
 from __future__ import annotations
 
+import hou
 from PySide6 import QtCore
 
 
@@ -70,6 +71,19 @@ class Section:
         docs/architecture/overview.md): a section owns its dialog like it
         owns its menu. Default: no dialog."""
         pass
+
+    def save_node(self, node) -> None:
+        """A scene node was dropped onto the panel (or otherwise handed
+        in to save) while this section is active. Each section routes to
+        its own save flow so the right dialog - with the right
+        categories - opens. Default: explain why nothing happens, since
+        the folder sections browse files on disk and have no node-save
+        concept."""
+        hou.ui.displayMessage(  # type: ignore
+            "This section browses files on disk - a scene node can't "
+            "be saved into it. Switch to Materials, Colors, Cop or "
+            "Code first."
+        )
 
     # -- the curated-library stack (asset sections only) -----------------
 
@@ -178,6 +192,11 @@ class MaterialSection(AssetSection):
     def edit_dialog(self) -> None:
         self.panel.edit_material_info()
 
+    def save_node(self, node) -> None:
+        # Materials support multi-selection saves, so the flow is
+        # selection-based - the drop handler selects the node first.
+        self.panel.save_asset()
+
 
 class CopSection(AssetSection):
     key = "cop"
@@ -191,6 +210,9 @@ class CopSection(AssetSection):
 
     def double_click(self, index) -> None:
         self.panel.import_cop_assets()
+
+    def save_node(self, node) -> None:
+        self.panel.save_cop_from_node(node)
 
 
 class CodeSection(AssetSection):
@@ -206,6 +228,9 @@ class CodeSection(AssetSection):
     def double_click(self, index) -> None:
         if index is not None and index.isValid():
             self.panel._apply_code_index(index)
+
+    def save_node(self, node) -> None:
+        self.panel.save_code_from_node(node)
 
 
 class FolderSection(Section):
@@ -299,6 +324,9 @@ class GradientSection(Section):
             entry = self.panel.gradient_model.entry(source.row())
             if entry is not None:
                 self.panel._apply_gradient_ramp(entry)
+
+    def save_node(self, node) -> None:
+        self.panel.save_gradient_from_node(node)
 
 
 #: The section registry, in tab order. Built by the panel after its

@@ -308,13 +308,24 @@ class DragDropCentralWidget(QtWidgets.QWidget):
             return
         node_path = event.mimeData().text()
         # Check if valid data:
-        if not hou.node(node_path):
+        node = hou.node(node_path)
+        if not node:
             return
-        hou.node(node_path).setSelected(True)  # Select node for save script
+        node.setSelected(True)  # Select node for save script
         panel = _find_panel(self)
         if panel is None:
             return
-        panel.save_asset()
+        # Route to the ACTIVE section's save flow (Section.save_node) so
+        # the right dialog - with that section's own categories - opens:
+        # a wrangle dropped in the Code section saves a snippet, not a
+        # material. Before setup() has built the registry (no library
+        # configured) fall back to the material flow, whose own guard
+        # explains that a library must be set first.
+        section = panel._section()
+        if section is None:
+            panel.save_asset()
+        else:
+            section.save_node(node)
 
 
 class CategoryDropFilter(QtCore.QObject):
