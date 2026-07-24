@@ -13,3 +13,4 @@ __pycache__/
 # Local working notes - never published; ignored in case tooling ever
 # recreates one inside the repo.
 CLAUDE.md
+houdinilogs.json
