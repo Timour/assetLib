@@ -1,0 +1,250 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<menuDocument>
+    <menu>
+        <!--***********************************-->
+        <scriptItem id="saveMatToEgLib">
+            <context>
+                <expression>
+<![CDATA[
+n = kwargs.get("node", None)
+if n.type().name() == "redshift_vopnet":
+    return True
+elif "rs_usd_material_builder" in n.type().name():
+    return True
+elif n.type().name() == "octane_vopnet":
+    return True
+elif "octane_solaris_material_builder" in n.type().name():
+    return True
+elif n.type().name() == "materialbuilder":
+    return True
+elif n.type().name() == "principledshader::2.0":
+    return True
+elif n.type().name() == "subnet":
+    return True
+elif n.type().name() == "collect":
+    return True
+elif "mtlxopen_pbr_surface" in n.type().name():
+    return True
+elif "mtlxstandard_surface" in n.type().name():
+    return True
+return False ]]>
+                    </expression>
+            </context>
+            <labelExpression>
+<![CDATA[
+try:
+    from matlib import branding
+    _APP = branding.APP_NAME
+except Exception:
+    _APP = "AssetLib"
+
+n = kwargs.get("node", None)
+if n.type().name() == "redshift_vopnet":
+    return "Save to " + _APP
+elif "rs_usd_material_builder" in n.type().name():
+    return "Save to " + _APP
+elif n.type().name() == "octane_vopnet":
+    return "Save to " + _APP
+elif "octane_solaris_material_builder" in n.type().name():
+    return "Save to " + _APP
+elif n.type().name() == "materialbuilder":
+    return "Save to " + _APP
+elif n.type().name() == "principledshader::2.0":
+    return "Save to " + _APP
+elif n.type().name() == "subnet":
+    return "Save to " + _APP
+elif n.type().name() == "collect":
+    return "Save to " + _APP
+elif "mtlxopen_pbr_surface" in n.type().name():
+    return "Save to " + _APP
+elif "mtlxstandard_surface" in n.type().name():
+    return "Save to " + _APP
+return "Unavailable in this Context"
+]]>
+</labelExpression>
+            <scriptCode>
+<![CDATA[
+n = kwargs.get("node", None)
+if n.type().name() == "redshift_vopnet":
+    import matlib
+    from matlib.utils import rc_calls
+    import importlib
+    importlib.reload(rc_calls)
+    rc_calls.save_material()
+elif "rs_usd_material_builder" in n.type().name():
+    import matlib
+    from matlib.utils import rc_calls
+    import importlib
+    importlib.reload(rc_calls)
+    rc_calls.save_material()
+elif n.type().name() == "octane_vopnet":
+    import matlib
+    from matlib.utils import rc_calls
+    import importlib
+    importlib.reload(rc_calls)
+    rc_calls.save_material()
+elif "octane_solaris_material_builder" in n.type().name():
+    import matlib
+    from matlib.utils import rc_calls
+    import importlib
+    importlib.reload(rc_calls)
+    rc_calls.save_material()
+elif n.type().name() == "materialbuilder":
+    import matlib
+    from matlib.utils import rc_calls
+    import importlib
+    importlib.reload(rc_calls)
+    rc_calls.save_material()
+elif n.type().name() == "principledshader::2.0":
+    import matlib
+    from matlib.utils import rc_calls
+    import importlib
+    importlib.reload(rc_calls)
+    rc_calls.save_material()
+elif n.type().name() == "subnet":
+    import matlib
+    from matlib.utils import rc_calls
+    import importlib
+    importlib.reload(rc_calls)
+    rc_calls.save_material()
+elif n.type().name() == "collect":
+    import matlib
+    from matlib.utils import rc_calls
+    import importlib
+    importlib.reload(rc_calls)
+    rc_calls.save_material()
+elif "mtlxopen_pbr_surface" in n.type().name():
+    import matlib
+    from matlib.utils import rc_calls
+    import importlib
+    importlib.reload(rc_calls)
+    rc_calls.save_material()
+elif "mtlxstandard_surface" in n.type().name():
+    import matlib
+    from matlib.utils import rc_calls
+    import importlib
+    importlib.reload(rc_calls)
+    rc_calls.save_material()
+else:
+    hou.ui.displayMessage('Please select Material Builder Nodes to save Material')
+
+]]>
+                </scriptCode>
+        </scriptItem>
+        <!--***********************************-->
+        <scriptItem id="saveGradientToAssetLib">
+            <context>
+                <expression>
+<![CDATA[
+n = kwargs.get("node", None)
+if n is None:
+    return False
+try:
+    for parm in n.parms():
+        t = parm.parmTemplate()
+        if t.type() == hou.parmTemplateType.Ramp and t.parmType() == hou.rampParmType.Color:
+            return True
+except Exception:
+    pass
+return False ]]>
+                    </expression>
+            </context>
+            <labelExpression>
+<![CDATA[
+try:
+    from matlib import branding
+    _APP = branding.APP_NAME
+except Exception:
+    _APP = "AssetLib"
+
+return "Save Gradient to " + _APP
+]]>
+</labelExpression>
+            <scriptCode>
+<![CDATA[
+import matlib
+from matlib.utils import rc_calls
+import importlib
+importlib.reload(rc_calls)
+rc_calls.save_gradient(kwargs.get("node", None))
+]]>
+                </scriptCode>
+        </scriptItem>
+        <!--***********************************-->
+        <scriptItem id="saveCopToAssetLib">
+            <context>
+                <expression>
+<![CDATA[
+n = kwargs.get("node", None)
+if n is None:
+    return False
+if n.type().name() == "copnet":
+    return True
+try:
+    return n.type().category().name() == "Cop"
+except AttributeError:
+    return False ]]>
+                    </expression>
+            </context>
+            <labelExpression>
+<![CDATA[
+try:
+    from matlib import branding
+    _APP = branding.APP_NAME
+except Exception:
+    _APP = "AssetLib"
+
+n = kwargs.get("node", None)
+if n is not None and n.type().name() != "copnet":
+    return "Save Selection to " + _APP
+return "Save to " + _APP
+]]>
+</labelExpression>
+            <scriptCode>
+<![CDATA[
+import matlib
+from matlib.utils import rc_calls
+import importlib
+importlib.reload(rc_calls)
+rc_calls.save_cop(kwargs.get("node", None))
+]]>
+                </scriptCode>
+        </scriptItem>
+        <!--***********************************-->
+        <scriptItem id="saveCodeToAssetLib">
+            <context>
+                <expression>
+<![CDATA[
+n = kwargs.get("node", None)
+if n is None:
+    return False
+for name in ("snippet", "vexpression", "kernelcode", "python", "code"):
+    if n.parm(name) is not None:
+        return True
+return False ]]>
+                    </expression>
+            </context>
+            <labelExpression>
+<![CDATA[
+try:
+    from matlib import branding
+    _APP = branding.APP_NAME
+except Exception:
+    _APP = "AssetLib"
+
+return "Save Code to " + _APP
+]]>
+</labelExpression>
+            <scriptCode>
+<![CDATA[
+import matlib
+from matlib.utils import rc_calls
+import importlib
+importlib.reload(rc_calls)
+rc_calls.save_code(kwargs.get("node", None))
+]]>
+                </scriptCode>
+        </scriptItem>
+        <!--***********************************-->
+    </menu>
+</menuDocument>

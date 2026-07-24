@@ -1,0 +1,15 @@
+# Byte-compiled Python (Houdini re-generates these per session)
+__pycache__/
+*.py[cod]
+
+# macOS Finder metadata
+.DS_Store
+
+# Editors
+.vscode/
+.idea/
+*.swp
+
+# Local working notes - never published; ignored in case tooling ever
+# recreates one inside the repo.
+CLAUDE.md

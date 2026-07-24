@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- Favorites ON state: solid amber star, per the
+       "ui_wireframe 2 only menu" design file. -->
+  <g transform="translate(-1253,-11.8)">
+    <path fill="#fcb900" d="M 1269 14 L 1273.488403 23.09314 L 1283.525757 24.560242 L 1276.262939 31.634277 L 1277.976929 41.627991 L 1269 36.907104 L 1260.023071 41.627991 L 1261.737061 31.634277 L 1254.474243 24.560242 L 1264.511597 23.09314 L 1269 14 Z"/>
+  </g>
+</svg>

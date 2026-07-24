@@ -1,0 +1,95 @@
+{
+    "category": "Toolbox",
+    "snippets": [
+        {
+            "name": "Jitter Points",
+            "language": "VEX",
+            "description": "Nudges every point by a random amount. Add a float slider 'amount' to control the spread — great for breaking up geometry that looks too perfect. Point Wrangle.",
+            "code": "// Random offset per point, seeded by point number so it's stable\nvector offset = vector(rand(@ptnum + {12.3, 7.1, 4.5})) - 0.5;\n@P += offset * chf(\"amount\");"
+        },
+        {
+            "name": "Color by Normal",
+            "language": "VEX",
+            "description": "Visualises surface normals as RGB — the classic way to eyeball whether normals point the right way. Point Wrangle.",
+            "code": "// Map normal direction (-1..1) into color (0..1)\n@Cd = @N * 0.5 + 0.5;"
+        },
+        {
+            "name": "Random pscale",
+            "language": "VEX",
+            "description": "Gives each point a random size (pscale). Set it up before a Copy to Points so instances vary in scale. Sliders: min / max. Point Wrangle.",
+            "code": "// Random per-point size between two sliders\n@pscale = fit01(rand(@ptnum), chf(\"min\"), chf(\"max\"));"
+        },
+        {
+            "name": "Sine Wave Deform",
+            "language": "VEX",
+            "description": "Animated sine wave rolling along X, displacing Y over time. Tweak freq / amp / speed. A quick way to add motion to a flat surface. Point Wrangle.",
+            "code": "// Animated wave on the Y axis\nfloat w = sin(@P.x * chf(\"freq\") + @Time * chf(\"speed\"));\n@P.y += w * chf(\"amp\");"
+        },
+        {
+            "name": "Delete Below Height",
+            "language": "VEX",
+            "description": "Removes points under a height threshold — swap the axis or comparison to cull however you like. Point Wrangle (run over Points).",
+            "code": "// Remove points beneath a height slider\nif (@P.y < chf(\"height\"))\n    removepoint(0, @ptnum);"
+        },
+        {
+            "name": "Fit / Remap Value",
+            "language": "VEX",
+            "description": "The bread-and-butter of controlling ranges in VEX: remap an attribute from one range to another. Reads @value, writes @remapped. Point Wrangle.",
+            "code": "// Remap from [oldmin,oldmax] into [newmin,newmax]\nf@remapped = fit(f@value, chf(\"oldmin\"), chf(\"oldmax\"),\n                 chf(\"newmin\"), chf(\"newmax\"));"
+        },
+        {
+            "name": "Push Along Normal",
+            "language": "VEX",
+            "description": "Moves points along their own normal — positive puffs out (peak), negative pulls in. Needs a normal (add a Normal SOP first). Point Wrangle.",
+            "code": "// Extrude points along their normal\n@P += normalize(@N) * chf(\"dist\");"
+        },
+        {
+            "name": "Radial Falloff Mask",
+            "language": "VEX",
+            "description": "Builds a 0..1 mask that fades with distance from a target point — the starting block for radial effects. Writes @mask (view it as Cd to preview). Point Wrangle.",
+            "code": "// Soft radial mask around a target (1 at center, 0 past radius)\nvector center = chv(\"center\");\nfloat d = length(@P - center);\nf@mask = 1.0 - smooth(0, chf(\"radius\"), d);\n@Cd = f@mask;"
+        },
+        {
+            "name": "Look At Target",
+            "language": "VEX",
+            "description": "Aims each point's normal toward a world-space target — handy before orienting copied geometry. Vector slider: target. Point Wrangle.",
+            "code": "// Point every normal at a target position\nvector target = chv(\"target\");\n@N = normalize(target - @P);"
+        },
+        {
+            "name": "Color Ramp Along Curve",
+            "language": "VEX",
+            "description": "Colors a curve from root to tip using a ramp parameter. Add a Ramp (color) parm named 'ramp'. Needs @curveu (Resample or Add SOP). Point Wrangle.",
+            "code": "// Drive color from a ramp along the curve\n@Cd = chramp(\"ramp\", @curveu);"
+        },
+        {
+            "name": "Facing Ratio (Fresnel)",
+            "language": "VEX",
+            "description": "How edge-on each point faces the camera — 1 head-on, 0 at grazing angles. A cheap fresnel/rim mask for shading or selection. Point Wrangle.",
+            "code": "// Facing ratio toward the camera\nvector camP = point(1, \"P\", 0);            // 2nd input: a single cam point,\nif (@numpt < 0) camP = getbbox_center(0);  // or wire nothing and edit here\nvector toCam = normalize(camP - @P);\nf@facing = fit(abs(dot(normalize(@N), toCam)), 0, 1, 0, 1);\n@Cd = f@facing;"
+        },
+        {
+            "name": "Nearest Point Distance",
+            "language": "VEX",
+            "description": "Distance from each point to its nearest neighbour in a second input — the core of proximity effects and scatter thinning. Point Wrangle (2 inputs).",
+            "code": "// Distance to the closest point in input 2\nint near = nearpoint(1, @P);\nvector nearP = point(1, \"P\", near);\nf@dist = length(@P - nearP);"
+        },
+        {
+            "name": "Group by Bounding Box",
+            "language": "VEX",
+            "description": "Puts points inside a slider-driven box into a group called 'inside'. A template for procedural selections. Point Wrangle.",
+            "code": "// Group points within a centered box\nvector size = chv(\"size\");\nvector c = getbbox_center(0);\nvector d = abs(@P - c);\nif (d.x < size.x && d.y < size.y && d.z < size.z)\n    setpointgroup(0, \"inside\", @ptnum, 1);"
+        },
+        {
+            "name": "Python: Point Count",
+            "language": "Python",
+            "description": "A minimal Python SOP: reports the incoming point count. A clean template to start any Python-driven geometry op. Python SOP.",
+            "code": "node = hou.pwd()\ngeo = node.geometry()\n\nprint(\"Point count:\", len(geo.points()))"
+        },
+        {
+            "name": "Python: Add & Fill Attribute",
+            "language": "Python",
+            "description": "Creates a float point attribute if missing and fills it per point — the starting point for Python-authored attributes. Python SOP.",
+            "code": "node = hou.pwd()\ngeo = node.geometry()\n\nif geo.findPointAttrib(\"myattr\") is None:\n    geo.addAttrib(hou.attribType.Point, \"myattr\", 0.0)\n\nfor pt in geo.points():\n    pt.setAttribValue(\"myattr\", float(pt.number()))"
+        }
+    ]
+}

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<pythonPanelDocument>
+  <!-- This file contains definitions of Python interfaces and the
+ interfaces menu.  It should not be hand-edited when it is being
+ used by the application.  Note, that two definitions of the
+ same interface or of the interfaces menu are not allowed
+ in a single file. -->
+  <!-- label = the pane-tab display name. This is the ONE user-visible
+       name Python can't reach at load time (Houdini reads it here before
+       any code runs), so on a rename it's edited here to match
+       branding.APP_NAME. name="MatLib" is functional (saved desktops key
+       off it) and must NOT change. -->
+  <interface name="MatLib" label="Amaze" icon="MISC_python" showNetworkNavigationBar="false"
+    help_url="">
+    <script><![CDATA[from matlib.panel import panel
+# import matlib
+import importlib
+# importlib.reload(matlib)
+importlib.reload(panel)
+
+def onCreateInterface():
+    matlib_widget = panel.MatLibPanel()
+    return matlib_widget]]></script>
+    <includeInPaneTabMenu menu_position="99" create_separator="false" />
+    <includeInToolbarMenu menu_position="415" create_separator="false" />
+    <help><![CDATA[]]></help>
+  </interface>
+</pythonPanelDocument>

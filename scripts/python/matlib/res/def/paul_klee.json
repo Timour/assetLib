@@ -1,0 +1,178 @@
+{
+  "source": "Palette sampled from Paul Klee, 'Farbtafel (qu 1)' (1930, gouache on paper); combinations composed after Klee's Bauhaus color theory in 'Beitraege zur bildnerischen Formlehre' (1921-1923), as presented in J. de Coca Leicher, 'Paul Klee. Principles on the Nature of Colour. Theory and Practice' (2018).",
+  "palette": [
+    { "name": "Gouache White", "hex": "#f8f3ea" },
+    { "name": "Naples Yellow", "hex": "#eed178" },
+    { "name": "Cadmium Yellow", "hex": "#fde25d" },
+    { "name": "Cadmium Orange", "hex": "#ef7f38" },
+    { "name": "Vermilion", "hex": "#c61b25" },
+    { "name": "Leaf Green", "hex": "#a4ab5e" },
+    { "name": "Cerulean", "hex": "#2b95bd" },
+    { "name": "Prussian Blue", "hex": "#12497a" },
+    { "name": "Ultramarine Violet", "hex": "#303562" }
+  ],
+  "combinations": [
+    {
+      "id": 1,
+      "name": "Primary Triangle",
+      "note": "The pure colours at the apexes of Klee's colour triangle: red, yellow, blue at their culminating points.",
+      "colors": [
+        { "name": "Vermilion", "hex": "#c61b25" },
+        { "name": "Cadmium Yellow", "hex": "#fde25d" },
+        { "name": "Prussian Blue", "hex": "#12497a" }
+      ]
+    },
+    {
+      "id": 2,
+      "name": "Secondary Chord",
+      "note": "The dependent colours on the triangle's sides - orange, green, violet - the Farbtafel's ultramarine standing at the violet end.",
+      "colors": [
+        { "name": "Cadmium Orange", "hex": "#ef7f38" },
+        { "name": "Leaf Green", "hex": "#a4ab5e" },
+        { "name": "Ultramarine Violet", "hex": "#303562" }
+      ]
+    },
+    {
+      "id": 3,
+      "name": "Blue-Orange Diameter",
+      "note": "Klee's first authentic pair, the horizontal diameter of the wheel, passing through the neutral pole at the centre.",
+      "colors": [
+        { "name": "Cerulean", "hex": "#2b95bd" },
+        { "name": "Gouache White", "hex": "#f8f3ea" },
+        { "name": "Cadmium Orange", "hex": "#ef7f38" }
+      ]
+    },
+    {
+      "id": 4,
+      "name": "Red-Green Diameter",
+      "note": "The second authentic pair: red against green, held in equilibrium by the pole between them.",
+      "colors": [
+        { "name": "Vermilion", "hex": "#c61b25" },
+        { "name": "Gouache White", "hex": "#f8f3ea" },
+        { "name": "Leaf Green", "hex": "#a4ab5e" }
+      ]
+    },
+    {
+      "id": 5,
+      "name": "Canon of Red",
+      "note": "One voice of the canon of totality: the warm end of red at yellow's culmination, red culminating, the cool end falling toward blue.",
+      "colors": [
+        { "name": "Cadmium Yellow", "hex": "#fde25d" },
+        { "name": "Vermilion", "hex": "#c61b25" },
+        { "name": "Ultramarine Violet", "hex": "#303562" }
+      ]
+    },
+    {
+      "id": 6,
+      "name": "The Cool Arc",
+      "note": "Peripheral movement along the cool third of the wheel: green through blue to blue-violet, the rainbow's incomplete end.",
+      "colors": [
+        { "name": "Leaf Green", "hex": "#a4ab5e" },
+        { "name": "Cerulean", "hex": "#2b95bd" },
+        { "name": "Ultramarine Violet", "hex": "#303562" }
+      ]
+    },
+    {
+      "id": 7,
+      "name": "The Warm Arc",
+      "note": "Peripheral movement along the warm third: yellow through orange to red, each colour entering as the last culminates.",
+      "colors": [
+        { "name": "Cadmium Yellow", "hex": "#fde25d" },
+        { "name": "Cadmium Orange", "hex": "#ef7f38" },
+        { "name": "Vermilion", "hex": "#c61b25" }
+      ]
+    },
+    {
+      "id": 8,
+      "name": "Illumination of Blue",
+      "note": "Runge's vertical dimension, which Klee set above and below the wheel: light descending through a colour toward its dark pole.",
+      "colors": [
+        { "name": "Gouache White", "hex": "#f8f3ea" },
+        { "name": "Cerulean", "hex": "#2b95bd" },
+        { "name": "Prussian Blue", "hex": "#12497a" }
+      ]
+    },
+    {
+      "id": 9,
+      "name": "Red and White Domes",
+      "note": "Tunisia, 1914 - 'Colour and me, we are one. I am a painter.' After the watercolour of the same name.",
+      "colors": [
+        { "name": "Gouache White", "hex": "#f8f3ea" },
+        { "name": "Naples Yellow", "hex": "#eed178" },
+        { "name": "Vermilion", "hex": "#c61b25" }
+      ]
+    },
+    {
+      "id": 10,
+      "name": "Totalis Pentaeder",
+      "note": "Klee's five-pointed totality: the three pure colours with white above and the dark pole below - the first step toward the colour sphere.",
+      "colors": [
+        { "name": "Gouache White", "hex": "#f8f3ea" },
+        { "name": "Cadmium Yellow", "hex": "#fde25d" },
+        { "name": "Vermilion", "hex": "#c61b25" },
+        { "name": "Prussian Blue", "hex": "#12497a" },
+        { "name": "Ultramarine Violet", "hex": "#303562" }
+      ]
+    },
+    {
+      "id": 11,
+      "name": "The Rainbow Chain",
+      "note": "Five links of the seven-colour chain Klee drew from the rainbow, in their peripheral order around the wheel.",
+      "colors": [
+        { "name": "Vermilion", "hex": "#c61b25" },
+        { "name": "Cadmium Orange", "hex": "#ef7f38" },
+        { "name": "Cadmium Yellow", "hex": "#fde25d" },
+        { "name": "Leaf Green", "hex": "#a4ab5e" },
+        { "name": "Cerulean", "hex": "#2b95bd" }
+      ]
+    },
+    {
+      "id": 12,
+      "name": "Blue-Orange Pendulum",
+      "note": "The pendular movement Klee described on the diameter: swinging from the cool depths through the neutral pole into warmth.",
+      "colors": [
+        { "name": "Ultramarine Violet", "hex": "#303562" },
+        { "name": "Cerulean", "hex": "#2b95bd" },
+        { "name": "Gouache White", "hex": "#f8f3ea" },
+        { "name": "Naples Yellow", "hex": "#eed178" },
+        { "name": "Cadmium Orange", "hex": "#ef7f38" }
+      ]
+    },
+    {
+      "id": 13,
+      "name": "Canon of Totality",
+      "note": "The colours enter like voices in a canon: one culminates, another enters softly, a third disappears - the warm voice rising until blue answers.",
+      "colors": [
+        { "name": "Naples Yellow", "hex": "#eed178" },
+        { "name": "Cadmium Yellow", "hex": "#fde25d" },
+        { "name": "Cadmium Orange", "hex": "#ef7f38" },
+        { "name": "Vermilion", "hex": "#c61b25" },
+        { "name": "Prussian Blue", "hex": "#12497a" }
+      ]
+    },
+    {
+      "id": 14,
+      "name": "Cosmology of the Palette",
+      "note": "Klee's logical palette: the diameters blue/orange and red/green laid out as pairs, orbiting the pole at the centre.",
+      "colors": [
+        { "name": "Cadmium Orange", "hex": "#ef7f38" },
+        { "name": "Cerulean", "hex": "#2b95bd" },
+        { "name": "Vermilion", "hex": "#c61b25" },
+        { "name": "Leaf Green", "hex": "#a4ab5e" },
+        { "name": "Gouache White", "hex": "#f8f3ea" }
+      ]
+    },
+    {
+      "id": 15,
+      "name": "Farbtafel qu 1",
+      "note": "The painting's own dominant chord - the five pigments that carry most of the 1930 colour chart.",
+      "colors": [
+        { "name": "Cadmium Orange", "hex": "#ef7f38" },
+        { "name": "Vermilion", "hex": "#c61b25" },
+        { "name": "Ultramarine Violet", "hex": "#303562" },
+        { "name": "Cerulean", "hex": "#2b95bd" },
+        { "name": "Naples Yellow", "hex": "#eed178" }
+      ]
+    }
+  ]
+}

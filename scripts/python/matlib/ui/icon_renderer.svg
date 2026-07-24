@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 36">
+  <!-- Renderer menu icon (3D box + corner menu triangle), from the
+       "ui_wireframe 2 only menu" design file. Colors are load-time tint targets:
+       #5d7abd = icon body, #7f807f = menu triangle, #2d2d2d = punch-out.
+       The box BODY is centered in the viewBox (the design centers the
+       clicked-state chip on the body); the triangle hangs into the
+       bottom-right corner, deliberately off-balance. -->
+  <g transform="translate(-1343,-9.443)">
+    <path fill="#5d7abd" d="M 1373.998657 33.220276 L 1373.998657 21.665283 C 1373.997559 20.634338 1373.447144 19.682068 1372.554321 19.166565 L 1362.443726 13.389038 C 1361.549927 12.873047 1360.44873 12.873047 1359.554932 13.389038 L 1349.444336 19.166565 C 1348.551514 19.682068 1348.001099 20.634338 1348 21.665283 L 1348 33.220276 C 1348.001099 34.251282 1348.551514 35.203552 1349.444336 35.719055 L 1359.554932 41.496521 C 1360.44873 42.012573 1361.549927 42.012573 1362.443726 41.496521 L 1372.554321 35.719055 C 1373.447144 35.203552 1373.997559 34.251282 1373.998657 33.220276 Z"/>
+    <path fill="none" stroke="#2d2d2d" stroke-width="3" stroke-linejoin="round" d="M 1348.390015 20.163147 L 1360.99939 27.457214 L 1373.608643 20.163147"/>
+    <path fill="none" stroke="#2d2d2d" stroke-width="3" stroke-linejoin="round" d="M 1360.99939 42.002075 L 1360.99939 27.44281"/>
+    <path fill="#7f807f" fill-rule="evenodd" d="M 1370 45 L 1378 45 L 1378 37 Z"/>
+  </g>
+</svg>

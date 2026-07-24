@@ -1,0 +1,173 @@
+{
+  "source": "Palette after Johannes Itten's twelve-part color wheel (Farbkreis) with the white and black poles of his color sphere; combinations composed after the seven color contrasts, the geometric chords, and the season studies in 'Kunst der Farbe' (The Art of Color, 1961) and his Bauhaus preliminary course teaching. Hues are interpretive approximations of the printed wheel.",
+  "palette": [
+    { "name": "Yellow", "hex": "#f2d21f" },
+    { "name": "Yellow-Orange", "hex": "#eda32b" },
+    { "name": "Orange", "hex": "#e2761b" },
+    { "name": "Red-Orange", "hex": "#d34e24" },
+    { "name": "Red", "hex": "#bf2a33" },
+    { "name": "Red-Violet", "hex": "#8f2a63" },
+    { "name": "Violet", "hex": "#5f2d84" },
+    { "name": "Blue-Violet", "hex": "#3d3c85" },
+    { "name": "Blue", "hex": "#27549d" },
+    { "name": "Blue-Green", "hex": "#12776f" },
+    { "name": "Green", "hex": "#2f8244" },
+    { "name": "Yellow-Green", "hex": "#90b528" },
+    { "name": "White", "hex": "#f2efe6" },
+    { "name": "Black", "hex": "#26241f" }
+  ],
+  "combinations": [
+    {
+      "id": 1,
+      "name": "First Triad",
+      "note": "The contrast of pure hue at its strongest: the undiluted primaries, an equilateral chord on the twelve-part wheel.",
+      "colors": [
+        { "name": "Yellow", "hex": "#f2d21f" },
+        { "name": "Red", "hex": "#bf2a33" },
+        { "name": "Blue", "hex": "#27549d" }
+      ]
+    },
+    {
+      "id": 2,
+      "name": "Second Triad",
+      "note": "The secondary chord - orange, violet, green - the same equilateral triangle rotated one step.",
+      "colors": [
+        { "name": "Orange", "hex": "#e2761b" },
+        { "name": "Violet", "hex": "#5f2d84" },
+        { "name": "Green", "hex": "#2f8244" }
+      ]
+    },
+    {
+      "id": 3,
+      "name": "Third Triad",
+      "note": "The first tertiary chord: yellow-orange, red-violet, blue-green.",
+      "colors": [
+        { "name": "Yellow-Orange", "hex": "#eda32b" },
+        { "name": "Red-Violet", "hex": "#8f2a63" },
+        { "name": "Blue-Green", "hex": "#12776f" }
+      ]
+    },
+    {
+      "id": 4,
+      "name": "Fourth Triad",
+      "note": "The second tertiary chord: red-orange, blue-violet, yellow-green.",
+      "colors": [
+        { "name": "Red-Orange", "hex": "#d34e24" },
+        { "name": "Blue-Violet", "hex": "#3d3c85" },
+        { "name": "Yellow-Green", "hex": "#90b528" }
+      ]
+    },
+    {
+      "id": 5,
+      "name": "Yellow and Violet",
+      "note": "The complementary pair that is also the strongest light-dark contrast among the hues, set on neutral ground.",
+      "colors": [
+        { "name": "Yellow", "hex": "#f2d21f" },
+        { "name": "White", "hex": "#f2efe6" },
+        { "name": "Violet", "hex": "#5f2d84" }
+      ]
+    },
+    {
+      "id": 6,
+      "name": "Blue and Orange",
+      "note": "The complementary pair that carries the cold-warm contrast, each demanding the other.",
+      "colors": [
+        { "name": "Blue", "hex": "#27549d" },
+        { "name": "White", "hex": "#f2efe6" },
+        { "name": "Orange", "hex": "#e2761b" }
+      ]
+    },
+    {
+      "id": 7,
+      "name": "Red and Green",
+      "note": "The complementary pair of equal brilliance - the simultaneous contrast at rest.",
+      "colors": [
+        { "name": "Red", "hex": "#bf2a33" },
+        { "name": "White", "hex": "#f2efe6" },
+        { "name": "Green", "hex": "#2f8244" }
+      ]
+    },
+    {
+      "id": 8,
+      "name": "Cold-Warm Poles",
+      "note": "Itten's temperature poles: red-orange, the warmest of all hues, against blue-green, the coldest.",
+      "colors": [
+        { "name": "Red-Orange", "hex": "#d34e24" },
+        { "name": "White", "hex": "#f2efe6" },
+        { "name": "Blue-Green", "hex": "#12776f" }
+      ]
+    },
+    {
+      "id": 9,
+      "name": "Spring",
+      "note": "The season studies: youthful, light, yellow-leaning - spring announced in bright greens and warmed whites.",
+      "colors": [
+        { "name": "White", "hex": "#f2efe6" },
+        { "name": "Yellow", "hex": "#f2d21f" },
+        { "name": "Yellow-Green", "hex": "#90b528" },
+        { "name": "Green", "hex": "#2f8244" },
+        { "name": "Yellow-Orange", "hex": "#eda32b" }
+      ]
+    },
+    {
+      "id": 10,
+      "name": "Summer",
+      "note": "The season studies: dense and saturated, foliage at full weight with warmth glowing inside it.",
+      "colors": [
+        { "name": "Green", "hex": "#2f8244" },
+        { "name": "Blue-Green", "hex": "#12776f" },
+        { "name": "Blue", "hex": "#27549d" },
+        { "name": "Yellow-Green", "hex": "#90b528" },
+        { "name": "Red", "hex": "#bf2a33" }
+      ]
+    },
+    {
+      "id": 11,
+      "name": "Autumn",
+      "note": "The season studies: the year burning down through oranges and reds, violet waiting in the shadows.",
+      "colors": [
+        { "name": "Yellow-Orange", "hex": "#eda32b" },
+        { "name": "Orange", "hex": "#e2761b" },
+        { "name": "Red-Orange", "hex": "#d34e24" },
+        { "name": "Red", "hex": "#bf2a33" },
+        { "name": "Violet", "hex": "#5f2d84" }
+      ]
+    },
+    {
+      "id": 12,
+      "name": "Winter",
+      "note": "The season studies: cold, sparse, withdrawn - blues against white ground and black bareness.",
+      "colors": [
+        { "name": "White", "hex": "#f2efe6" },
+        { "name": "Blue", "hex": "#27549d" },
+        { "name": "Blue-Violet", "hex": "#3d3c85" },
+        { "name": "Blue-Green", "hex": "#12776f" },
+        { "name": "Black", "hex": "#26241f" }
+      ]
+    },
+    {
+      "id": 13,
+      "name": "The Warm Half",
+      "note": "Five steps along the warm half of the wheel, yellow to red - a peripheral scale of rising temperature.",
+      "colors": [
+        { "name": "Yellow", "hex": "#f2d21f" },
+        { "name": "Yellow-Orange", "hex": "#eda32b" },
+        { "name": "Orange", "hex": "#e2761b" },
+        { "name": "Red-Orange", "hex": "#d34e24" },
+        { "name": "Red", "hex": "#bf2a33" }
+      ]
+    },
+    {
+      "id": 14,
+      "name": "The Cold Half",
+      "note": "Five steps along the cold half of the wheel, green to violet - the descending scale of temperature.",
+      "colors": [
+        { "name": "Green", "hex": "#2f8244" },
+        { "name": "Blue-Green", "hex": "#12776f" },
+        { "name": "Blue", "hex": "#27549d" },
+        { "name": "Blue-Violet", "hex": "#3d3c85" },
+        { "name": "Violet", "hex": "#5f2d84" }
+      ]
+    }
+  ]
+}

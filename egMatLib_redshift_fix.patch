@@ -1,0 +1,4493 @@
+diff -ruN a/.gitignore b/.gitignore
+--- a/.gitignore	2026-07-15 17:28:10
++++ b/.gitignore	2026-07-15 17:33:28
+@@ -1,130 +1,11 @@
+-# Byte-compiled / optimized / DLL files
++# Byte-compiled Python (Houdini re-generates these per session)
+ __pycache__/
+ *.py[cod]
+-*$py.class
+ 
+-# C extensions
+-*.so
+-
+-# Distribution / packaging
+-.Python
+-build/
+-develop-eggs/
+-dist/
+-downloads/
+-eggs/
+-.eggs/
+-lib/
+-lib64/
+-parts/
+-sdist/
+-var/
+-wheels/
+-pip-wheel-metadata/
+-share/python-wheels/
+-*.egg-info/
+-.installed.cfg
+-*.egg
+-MANIFEST
+-
+-# PyInstaller
+-#  Usually these files are written by a python script from a template
+-#  before PyInstaller builds the exe, so as to inject date/other infos into it.
+-*.manifest
+-*.spec
+-
+-# Installer logs
+-pip-log.txt
+-pip-delete-this-directory.txt
+-
+-# Unit test / coverage reports
+-htmlcov/
+-.tox/
+-.nox/
+-.coverage
+-.coverage.*
+-.cache
+-nosetests.xml
+-coverage.xml
+-*.cover
+-*.py,cover
+-.hypothesis/
+-.pytest_cache/
+-
+-# Translations
+-*.mo
+-*.pot
+-
+-# Django stuff:
+-*.log
+-local_settings.py
+-db.sqlite3
+-db.sqlite3-journal
+-
+-# Flask stuff:
+-instance/
+-.webassets-cache
+-
+-# Scrapy stuff:
+-.scrapy
+-
+-# Sphinx documentation
+-docs/_build/
+-
+-# PyBuilder
+-target/
+-
+-# Jupyter Notebook
+-.ipynb_checkpoints
+-
+-# IPython
+-profile_default/
+-ipython_config.py
+-
+-# pyenv
+-.python-version
+-
+-# pipenv
+-#   According to pypa/pipenv#598, it is recommended to include Pipfile.lock in version control.
+-#   However, in case of collaboration, if having platform-specific dependencies or dependencies
+-#   having no cross-platform support, pipenv may install dependencies that don't work, or not
+-#   install all needed dependencies.
+-#Pipfile.lock
+-
+-# PEP 582; used by e.g. github.com/David-OConnor/pyflow
+-__pypackages__/
+-
+-# Celery stuff
+-celerybeat-schedule
+-celerybeat.pid
+-
+-# SageMath parsed files
+-*.sage.py
+-
+-# Environments
+-.env
+-.venv
+-env/
+-venv/
+-ENV/
+-env.bak/
+-venv.bak/
+-
+-# Spyder project settings
+-.spyderproject
+-.spyproject
+-
+-# Rope project settings
+-.ropeproject
+-
+-# mkdocs documentation
+-/site
+-
+-# mypy
+-.mypy_cache/
+-.dmypy.json
+-dmypy.json
+-
+-# Pyre type checker
+-.pyre/
++# macOS Finder metadata
+ .DS_Store
++
++# Editors
++.vscode/
++.idea/
++*.swp
+diff -ruN a/OPmenu.xml b/OPmenu.xml
+--- a/OPmenu.xml	2026-07-15 17:28:10
++++ b/OPmenu.xml	2026-07-15 17:30:53
+@@ -9,8 +9,12 @@
+ n = kwargs.get("node", None)
+ if n.type().name() == "redshift_vopnet":
+     return True
++elif "rs_usd_material_builder" in n.type().name():
++    return True
+ elif n.type().name() == "octane_vopnet":
+     return True
++elif "octane_solaris_material_builder" in n.type().name():
++    return True
+ elif n.type().name() == "materialbuilder":
+     return True
+ elif n.type().name() == "principledshader::2.0":
+@@ -33,8 +37,12 @@
+ n = kwargs.get("node", None)
+ if n.type().name() == "redshift_vopnet":
+     return "Save Material to MatLib"
++elif "rs_usd_material_builder" in n.type().name():
++    return "Save Material to MatLib"
+ elif n.type().name() == "octane_vopnet":
+     return "Save Material to MatLib"
++elif "octane_solaris_material_builder" in n.type().name():
++    return "Save Material to MatLib"
+ elif n.type().name() == "materialbuilder":
+     return "Save Material to MatLib"
+ elif n.type().name() == "principledshader::2.0":
+@@ -61,7 +69,19 @@
+     import importlib
+     importlib.reload(rc_calls)
+     rc_calls.save_material()
++elif "rs_usd_material_builder" in n.type().name():
++    import matlib
++    from matlib.utils import rc_calls
++    import importlib
++    importlib.reload(rc_calls)
++    rc_calls.save_material()
+ elif n.type().name() == "octane_vopnet":
++    import matlib
++    from matlib.utils import rc_calls
++    import importlib
++    importlib.reload(rc_calls)
++    rc_calls.save_material()
++elif "octane_solaris_material_builder" in n.type().name():
+     import matlib
+     from matlib.utils import rc_calls
+     import importlib
+diff -ruN a/python_panels/MatLib.pypanel b/python_panels/MatLib.pypanel
+--- a/python_panels/MatLib.pypanel	2026-07-15 17:28:10
++++ b/python_panels/MatLib.pypanel	2026-07-15 17:30:53
+@@ -16,8 +16,8 @@
+ def onCreateInterface():
+     matlib_widget = panel.MatLibPanel()
+     return matlib_widget]]></script>
+-    <includeInPaneTabMenu menu_position="99" create_separator="true" />
+-    <includeInToolbarMenu menu_position="415" create_separator="true" />
++    <includeInPaneTabMenu menu_position="99" create_separator="false" />
++    <includeInToolbarMenu menu_position="415" create_separator="false" />
+     <help><![CDATA[]]></help>
+   </interface>
+ </pythonPanelDocument>
+diff -ruN a/scripts/python/matlib/core/category.py b/scripts/python/matlib/core/category.py
+--- a/scripts/python/matlib/core/category.py	2026-07-15 17:28:10
++++ b/scripts/python/matlib/core/category.py	2026-07-15 17:30:53
+@@ -67,13 +67,31 @@
+                 self._categories[count] = new
+         self.save()
+ 
++    def normalize_categories(self) -> int:
++        """Strip whitespace and remove duplicate/empty entries from the
++        category list (legacy data cleanup). Returns changed entry count."""
++        cleaned = []
++        changed = 0
++        for c in self._categories:
++            c2 = c.strip() if isinstance(c, str) else ""
++            if c2 == "" or c2 in cleaned:
++                changed += 1
++                continue
++            if c2 != c:
++                changed += 1
++            cleaned.append(c2)
++        if changed:
++            self._categories = cleaned
++            self.save()
++        return changed
++
+     def check_add_category(self, cat: str) -> None:
+         """Checks if this category exists and adds it if needed"""
+         if "Multiple Values..." in cat:
+             return
+         changed = False
+         for c in cat.split(","):
+-            c = c.replace(" ", "")
++            c = c.strip()
+             if c != "" and c not in self._categories:
+                 self._categories.append(c)
+                 changed = True
+diff -ruN a/scripts/python/matlib/core/library.py b/scripts/python/matlib/core/library.py
+--- a/scripts/python/matlib/core/library.py	2026-07-15 17:28:10
++++ b/scripts/python/matlib/core/library.py	2026-07-15 17:30:53
+@@ -85,6 +85,10 @@
+         self.RendererRole = QtCore.Qt.ItemDataRole.UserRole + 3  # 259
+         self.TagRole = QtCore.Qt.ItemDataRole.UserRole + 4  # 260
+         self.DateRole = QtCore.Qt.ItemDataRole.UserRole + 5  # 261
++        self.RendererLabelRole = QtCore.Qt.ItemDataRole.UserRole + 6  # 262
++        # is_usd is derived from each material's .interface file; cache the
++        # result per material id so it is read once, not on every repaint.
++        self._usd_cache = {}
+ 
+         self.default_image = QtGui.QImage(missing).scaled(
+             QtCore.QSize(BASE_SIZE, BASE_SIZE)
+@@ -116,6 +120,7 @@
+ 
+         self._assets = [material.Material.from_dict(d) for d in self._data["assets"]]
+         self._tags = self._data["tags"]
++        self._usd_cache = {}
+         self.rebuild_thumbs()
+ 
+     def flags(
+@@ -208,12 +213,42 @@
+         self._remove_thumb(row)
+         return True
+ 
++    def is_usd_material(self, asset) -> bool:
++        """True if the material is a USD-builder type (rs_usd_material_builder
++        or octane_solaris_material_builder), detected from its .interface file
++        and cached per material id."""
++        mid = asset.mat_id
++        if mid in self._usd_cache:
++            return self._usd_cache[mid]
++        try:
++            handler = nodes.NodeHandler(self.preferences)
++            node_type = handler.get_saved_node_type(asset)
++            result = node_type in nodes.NodeHandler.LOP_CAPABLE_NODE_TYPES
++        except Exception:
++            result = False
++        self._usd_cache[mid] = result
++        return result
++
++    def renderer_label(self, asset) -> str:
++        """Human label for the material's renderer, prefixed 'USD ' for the
++        USD-builder types (e.g. 'USD Redshift', 'Octane', 'Karma'). Empty
++        string if the renderer is unknown."""
++        renderer = str(asset.renderer or "").strip()
++        if not renderer:
++            return ""
++        if self.is_usd_material(asset):
++            return "USD " + renderer
++        return renderer
++
+     def data(
+         self, index: QtCore.QModelIndex | QtCore.QPersistentModelIndex, role: int = 0
+     ) -> Any:
+         if role == QtCore.Qt.ItemDataRole.DisplayRole:
+             return self._assets[index.row()].name
+ 
++        if role == self.RendererLabelRole:
++            return self.renderer_label(self._assets[index.row()])
++
+         if role == QtCore.Qt.ItemDataRole.DecorationRole:
+             image = self._thumbs[index.row()]
+             if image:
+@@ -287,10 +322,13 @@
+     def sanitize_tags(self, tags):
+         ts = []
+         for t in tags.split(","):
+-            t = t.replace(" ", "")
+-            ts.append(t)
++            t = t.strip()
++            if t != "":
++                ts.append(t)
+ 
+-        ts = set(ts)
++        # dict.fromkeys dedupes while preserving insertion order; a plain
++        # set() here made tag order reshuffle unpredictably on every edit.
++        ts = dict.fromkeys(ts)
+         new_tags = ",".join(ts)
+         return new_tags
+ 
+@@ -340,6 +378,13 @@
+             asset.mat_id + ".interface",
+         )
+ 
++        cop_file_path = os.path.join(
++            self.preferences.dir,
++            self.preferences.asset_dir,
++            asset.mat_id + "_cop" + self.preferences.ext,
++        )
++        if os.path.exists(cop_file_path):
++            os.remove(cop_file_path)
+         if os.path.exists(asset_file_path):
+             os.remove(asset_file_path)
+         if os.path.exists(img_file_path):
+@@ -354,7 +399,7 @@
+     def check_add_tags(self, tag: str) -> None:
+         """Checks if this tag exists and adds it if needed"""
+         for t in tag.split(","):
+-            t = t.replace(" ", "")
++            t = t.strip()
+             if t != "" and t not in self.tags:
+                 self.tags.append(t)
+         self.save()
+@@ -387,6 +432,7 @@
+         new_mat.set_data(node.name(), cats, tags, fav, renderer)
+ 
+         if handler.save_node(node, new_mat.mat_id, False):
++            new_mat.cop_net = handler.cop_info
+             self._assets.append(new_mat)
+             self._add_thumb_paths(self.index(self.rowCount() - 1, 0))
+             self.save()
+@@ -410,11 +456,15 @@
+         # self.save()
+         return self._assets[self.rowCount() - 1]
+ 
+-    def cleanup_db(self) -> None:
+-        """Removes orphan data from disk and highlights missing thumbnails"""
+-        mark_rmv = 0
+-        mark_render = 0
++    def cleanup_db(self) -> int:
++        """Removes orphan data from disk, rescues uncategorized materials
++        and reports everything in a single summary dialog.
++        Never renders anything. Returns 1 if materials were rescued."""
++        summary = []
+ 
++        # --- Pass 1: scan assets (no mutation during iteration) ---
++        rows_to_remove = []
++        missing_thumbs = 0
+         for row, asset in enumerate(self._assets):
+             interface_path = os.path.join(
+                 self.preferences.dir,
+@@ -433,28 +483,40 @@
+             )
+ 
+             if not os.path.exists(interface_path) or not os.path.exists(mat_path):
+-                print("Asset %d missing on disk -> Removed from disk!", asset.mat_id)
+-                mark_rmv = 1
+-                self.remove_asset(self.index(row))
+-            if not os.path.exists(img_path):
+-                mark_render = 1
+-                print(
+-                    f"Image for Asset { asset.mat_id} missing on disk -> Needs Rendering!"
+-                )
++                print(f"Asset {asset.mat_id} ({asset.name}) missing on disk -> removed from library")
++                rows_to_remove.append(row)
++            elif not os.path.exists(img_path):
++                missing_thumbs += 1
++                print(f"Image for asset {asset.mat_id} ({asset.name}) missing on disk")
+ 
++        # --- Pass 2: remove collected rows, highest row first so the
++        # remaining indices stay valid ---
++        for row in sorted(rows_to_remove, reverse=True):
++            self.remove_asset(self.index(row))
++        if rows_to_remove:
++            summary.append(
++                f"{len(rows_to_remove)} material(s) had missing files and were removed from the library."
++            )
++        if missing_thumbs:
++            summary.append(
++                f"{missing_thumbs} material(s) lack a thumbnail image. "
++                "Use 'Update all Thumbnails' when convenient (renders take time)."
++            )
++
++        # --- Pass 3: lonely files on disk ---
++        lone_count = 0
+         mats_path = os.path.join(self.preferences.dir, self.preferences.asset_dir)
+-        mark_lone = 0
+         for f in os.listdir(mats_path):
+             if f.endswith(".mat") or f.endswith(".interface"):
+                 split = f.split(".")[0]
+-                found = [mat for mat in self._assets if str(split) in str(mat.mat_id)]
++                if split.endswith("_cop"):
++                    split = split[: -len("_cop")]
++                found = [mat for mat in self._assets if str(split) == str(mat.mat_id)]
+                 if not found:
+-                    print(
+-                        f"Lonely File at {os.path.join(mats_path, f)} found -> Removed from disk!"
+-                    )
++                    print(f"Lonely file {os.path.join(mats_path, f)} -> removed from disk")
+                     try:
+                         os.remove(os.path.join(mats_path, f))
+-                        mark_lone = 1
++                        lone_count += 1
+                     except OSError:
+                         pass
+ 
+@@ -462,28 +524,51 @@
+         for f in os.listdir(mats_path):
+             if f.endswith(".png"):
+                 split = f.split(".")[0]
+-                found = [mat for mat in self._assets if str(split) in str(mat.mat_id)]
++                found = [mat for mat in self._assets if str(split) == str(mat.mat_id)]
+                 if not found:
+-                    print(
+-                        f"Lonely File at {os.path.join(mats_path, f)} found. Removing from disk"
+-                    )
++                    print(f"Lonely file {os.path.join(mats_path, f)} -> removed from disk")
+                     try:
+                         os.remove(os.path.join(mats_path, f))
+-                        mark_lone = 1
++                        lone_count += 1
+                     except OSError:
+                         pass
++        if lone_count:
++            summary.append(f"{lone_count} orphaned file(s) on disk were removed.")
+ 
+-        if mark_rmv:
+-            hou.ui.displayMessage(
+-                "Assets have been cleaned up. See python shell for details"  # type: ignore
++        # --- Pass 4: rescue materials without a valid category and
++        # normalize legacy whitespace-mangled category data ---
++        mark_rescued = 0
++        rescued_count = 0
++        for asset in self._assets:
++            cats = asset.categories
++            if isinstance(cats, str):
++                cats = cats.split(",") if cats else []
++            cats = [c.strip() for c in cats if isinstance(c, str) and c.strip() != ""]
++            if not cats:
++                cats = ["Uncategorized"]
++                mark_rescued = 1
++                rescued_count += 1
++                print(f"Asset {asset.mat_id} ({asset.name}) had no category -> moved to 'Uncategorized'")
++            asset.categories = ", ".join(cats)
++        if rescued_count:
++            summary.append(
++                f"{rescued_count} material(s) had no category and were moved to 'Uncategorized'."
+             )
+-        if mark_render:
++
++        if rows_to_remove or mark_rescued:
++            self.save()
++
++        # --- Single summary dialog ---
++        if summary:
+             hou.ui.displayMessage(
+-                "Missing images have been found. Rerender thumbs required"  # type: ignore
++                "Library cleanup finished:\n\n- " + "\n- ".join(summary)
++                + "\n\nDetails in the Python shell."  # type: ignore
+             )
+-        if mark_lone:
+-            hou.ui.displayMessage("Lone files have been found and removed from disk.")  # type: ignore
++        else:
++            hou.ui.displayMessage("Library cleanup finished: nothing to clean.")  # type: ignore
+ 
++        return mark_rescued
++
+     def toggle_fav(self, index: QtCore.QModelIndex) -> None:
+         """
+         Toggle the Favorite Parameter for the given QModelIndex
+@@ -511,13 +596,19 @@
+         self._add_thumb_paths(index)
+         self._force_render = False
+ 
+-    def import_asset_to_scene(self, index: QtCore.QModelIndex) -> None:
++    def import_asset_to_scene(
++        self, index: QtCore.QModelIndex, target: str = "auto"
++    ):
+         """
+-        Import the given QModelIndex to the current Houdini Scene/Network Editor
++        Import the given QModelIndex into the Houdini scene.
+ 
++        target: "auto" (context-aware), "mat", or "lop".
++        Returns (ok, reason) from the importer so the panel can report any
++        materials that could not live in the requested context.
++
+         :param self: Description
+         :param index: Description
+         :type index: QtCore.QModelIndex
+         """
+         importer = nodes.NodeHandler(self.preferences)
+-        importer.import_asset_to_scene(self._assets[index.row()])
++        return importer.import_asset_to_scene(self._assets[index.row()], target)
+diff -ruN a/scripts/python/matlib/core/material.py b/scripts/python/matlib/core/material.py
+--- a/scripts/python/matlib/core/material.py	2026-07-15 17:28:10
++++ b/scripts/python/matlib/core/material.py	2026-07-15 17:30:53
+@@ -35,6 +35,7 @@
+         self._cats = [""] if not cats else cats
+         self._tags = [""] if not tags else tags
+         self._mat_id = str(uuid.uuid1().time) if mat_id == "" else mat_id
++        self._cop_net = {}
+ 
+     @classmethod
+     def from_dict(cls, material_dict: dict) -> Material:
+@@ -57,7 +58,9 @@
+         usd = material_dict["usd"]
+         builder = material_dict["builder"]
+ 
+-        return cls(name, cats, tags, fav, renderer, date, builder, usd, mat_id)
++        mat = cls(name, cats, tags, fav, renderer, date, builder, usd, mat_id)
++        mat.cop_net = material_dict.get("cop_net", {})
++        return mat
+ 
+     def get_as_dict(self) -> dict:
+         """
+@@ -78,11 +81,21 @@
+             "renderer": self._renderer,
+             "usd": self._usd,
+             "builder": self._builder,
++            "cop_net": self._cop_net,
+         }
+ 
+         return material_dict
+ 
+     @property
++    def cop_net(self) -> dict:
++        """COP companion network info ({} if the material has none)"""
++        return self._cop_net
++
++    @cop_net.setter
++    def cop_net(self, val: dict) -> None:
++        self._cop_net = val if val else {}
++
++    @property
+     def mat_id(self) -> str:
+         """
+         Docstring for mat_id
+@@ -215,10 +228,7 @@
+         :param tags: Description
+         :type tags: str
+         """
+-        tag = tags.split(",")
+-        for c in tag:
+-            c = c.replace(" ", "")
+-        self._tags = tag
++        self._tags = [t.strip() for t in tags.split(",") if t.strip() != ""]
+ 
+     @property
+     def usd(self) -> int:
+@@ -251,10 +261,9 @@
+         :param cats: Description
+         :type cats: str
+         """
+-        cat = cats.split(",")
+-        for c in cat:
+-            c = c.replace(" ", "")
+-        self._cats = cat
++        # strip() keeps inner spaces ("rs material") while removing
++        # leading/trailing whitespace from comma-splitting
++        self._cats = [c.strip() for c in cats.split(",") if c.strip() != ""]
+ 
+     def remove_category(self, cat: str) -> None:
+         """
+@@ -266,8 +275,6 @@
+         """
+         if cat in self._cats:
+             self._cats.remove(cat)
+-            if not self._cats:
+-                self._cats = ""
+ 
+     def rename_category(self, old: str, new: str) -> None:
+         """
+diff -ruN a/scripts/python/matlib/core/multifilterproxy_model.py b/scripts/python/matlib/core/multifilterproxy_model.py
+--- a/scripts/python/matlib/core/multifilterproxy_model.py	2026-07-15 17:28:10
++++ b/scripts/python/matlib/core/multifilterproxy_model.py	2026-07-15 17:30:53
+@@ -54,16 +54,17 @@
+                 if curr_filter.lower() not in data.lower():
+                     name_filter = False
+             elif role == 257:  # Check Category:
+-                if len(data) < 1:
++                # A material matches if ANY of its categories equals the
++                # filter (materials can belong to multiple categories).
++                if curr_filter == "":
++                    cat_filter = True
++                elif len(data) < 1:
+                     cat_filter = False
+-                    if curr_filter == "":
+-                        cat_filter = True
+                 else:
+-                    for elem in data:
+-                        if curr_filter == "":
+-                            cat_filter = True
+-                        elif curr_filter.lower() != elem.lower():
+-                            cat_filter = False
++                    cat_filter = any(
++                        curr_filter.lower() == str(elem).strip().lower()
++                        for elem in data
++                    )
+ 
+             elif role == 258:  # Check Favorite:
+                 if curr_filter != data and curr_filter != "":
+diff -ruN a/scripts/python/matlib/dialogs/usd_dialog.py b/scripts/python/matlib/dialogs/usd_dialog.py
+--- a/scripts/python/matlib/dialogs/usd_dialog.py	2026-07-15 17:28:10
++++ b/scripts/python/matlib/dialogs/usd_dialog.py	2026-07-15 17:30:53
+@@ -12,7 +12,7 @@
+     Material Import Dialog attached to the MatLibPanel
+     """
+ 
+-    def __init__(self, cat_list: list[str]) -> None:
++    def __init__(self, cat_list: list[str], default_cat: str = "") -> None:
+         super(UsdDialog, self).__init__()
+         self.script_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+ 
+@@ -37,6 +37,13 @@
+         for cat in cat_list:
+             self.combo_cats.addItem(cat)
+         self.combo_cats.setInsertPolicy(QtWidgets.QComboBox.InsertPolicy.InsertAtTop)
++
++        # Pre-select the category currently active in the panel so a
++        # material dropped while browsing e.g. "Fabric" defaults to it.
++        if default_cat:
++            default_index = self.combo_cats.findText(default_cat)
++            if default_index >= 0:
++                self.combo_cats.setCurrentIndex(default_index)
+ 
+         self.line_tags = self.ui.findChild(QtWidgets.QLineEdit, "line_tags")
+         self.cb_fav = self.ui.findChild(QtWidgets.QCheckBox, "cb_fav")
+diff -ruN a/scripts/python/matlib/helpers/helpers.py b/scripts/python/matlib/helpers/helpers.py
+--- a/scripts/python/matlib/helpers/helpers.py	2026-07-15 17:28:10
++++ b/scripts/python/matlib/helpers/helpers.py	2026-07-15 17:30:53
+@@ -32,15 +32,25 @@
+     Get all connected nodes for the given node
+     Returns Input and Output Nodes in a single list
+ 
++    Both get_connected_input_nodes and get_connected_output_nodes include
++    the starting node itself in their result, so the raw concatenation
++    would contain it twice - dedupe by path, preserving discovery order.
++
+     :param node: Description
+     :type node: hou.Node
+     :return: Description
+     :rtype: list[Node]
+     """
+-    nodes = [node]
+-    in_nodes = get_connected_input_nodes(nodes, selected=[])
+-    out_nodes = get_connected_output_nodes(nodes, selected=[])
+-    return in_nodes + out_nodes
++    in_nodes = get_connected_input_nodes([node], selected=[])
++    out_nodes = get_connected_output_nodes([node], selected=[])
++    seen = set()
++    unique = []
++    for n in in_nodes + out_nodes:
++        path = n.path()
++        if path not in seen:
++            seen.add(path)
++            unique.append(n)
++    return unique
+ 
+ 
+ def get_connected_input_nodes(
+diff -ruN a/scripts/python/matlib/helpers/ui_helpers.py b/scripts/python/matlib/helpers/ui_helpers.py
+--- a/scripts/python/matlib/helpers/ui_helpers.py	2026-07-15 17:28:10
++++ b/scripts/python/matlib/helpers/ui_helpers.py	2026-07-15 17:30:53
+@@ -8,13 +8,64 @@
+ class ClickSlider(QtWidgets.QSlider):
+     """
+     The slider provides continuous updates on slideing
+-    and allows for snapping to mouse on click
++    and allows for snapping to mouse on click. Paints its own groove and
++    handle (Houdini 22 style) instead of relying on QSlider's
++    sub-page/add-page stylesheet selectors - those rendered unpredictably
++    across styles/platforms (colors landed on the correct side, but their
++    declared heights did not), so this draws deterministically instead.
+     """
+ 
++    LEFT_COLOR = QtGui.QColor("#826E95")
++    LEFT_WIDTH = 2
++    RIGHT_COLOR = QtGui.QColor("#1a1a1a")
++    RIGHT_WIDTH = 2
++    HANDLE_COLOR = QtGui.QColor("#f2f2f2")
++    HANDLE_DIAMETER = 12
++
+     def __init__(self) -> None:
+         super(ClickSlider, self).__init__()
+ 
+-    def mouseClickEvent(self, e: QtGui.QMouseEvent):
++    def _handle_x(self) -> float:
++        """X position of the handle centre for the current value. Inset by
++        the handle radius on both ends so the circle always stays fully
++        inside the widget - without this, the handle centre reaches all
++        the way to x=0/x=width at the value extremes and half of it gets
++        clipped outside the widget bounds."""
++        span = self.maximum() - self.minimum()
++        fraction = 0.0 if span == 0 else (self.value() - self.minimum()) / span
++        radius = self.HANDLE_DIAMETER / 2
++        usable = max(self.width() - 2 * radius, 0)
++        return radius + fraction * usable
++
++    def paintEvent(self, event: QtGui.QPaintEvent) -> None:
++        painter = QtGui.QPainter(self)
++        painter.setRenderHint(QtGui.QPainter.RenderHint.Antialiasing, True)
++
++        mid_y = self.height() / 2
++        handle_x = self._handle_x()
++
++        left_pen = QtGui.QPen(self.LEFT_COLOR)
++        left_pen.setWidth(self.LEFT_WIDTH)
++        left_pen.setCapStyle(QtCore.Qt.PenCapStyle.FlatCap)
++        painter.setPen(left_pen)
++        painter.drawLine(QtCore.QPointF(0, mid_y), QtCore.QPointF(handle_x, mid_y))
++
++        right_pen = QtGui.QPen(self.RIGHT_COLOR)
++        right_pen.setWidth(self.RIGHT_WIDTH)
++        right_pen.setCapStyle(QtCore.Qt.PenCapStyle.FlatCap)
++        painter.setPen(right_pen)
++        painter.drawLine(
++            QtCore.QPointF(handle_x, mid_y), QtCore.QPointF(self.width(), mid_y)
++        )
++
++        painter.setPen(QtCore.Qt.PenStyle.NoPen)
++        painter.setBrush(self.HANDLE_COLOR)
++        radius = self.HANDLE_DIAMETER / 2
++        painter.drawEllipse(QtCore.QPointF(handle_x, mid_y), radius, radius)
++
++        painter.end()
++
++    def mousePressEvent(self, e: QtGui.QMouseEvent):
+         if e.button() == QtCore.Qt.LeftButton:
+             e.accept()
+             x = e.pos().x()
+@@ -29,8 +80,9 @@
+                 self.setSingleStep(stepsize)
+             except Exception:
+                 pass
++            self.setValue(int(value))
+         else:
+-            return super().mouseClickEvent(e)
++            return super().mousePressEvent(e)
+ 
+     def mouseMoveEvent(self, ev: QtGui.QMouseEvent) -> None:
+         ev.accept()
+diff -ruN a/scripts/python/matlib/panel/dragdrop_widgets.py b/scripts/python/matlib/panel/dragdrop_widgets.py
+--- a/scripts/python/matlib/panel/dragdrop_widgets.py	2026-07-15 17:28:10
++++ b/scripts/python/matlib/panel/dragdrop_widgets.py	2026-07-15 17:30:53
+@@ -2,11 +2,28 @@
+ Module For Drag and Drop Widgets handling the Drag and Drop from and to Houdini
+ """
+ 
+-from datetime import datetime
++import time
+ from PySide6 import QtWidgets, QtGui
+ import hou
+ 
+ 
++def _find_panel(widget: QtWidgets.QWidget):
++    """Walk up widget's parent chain to the MatLibPanel instance.
++
++    More robust than a fixed parentWidget() depth: the panel's widget
++    hierarchy has been restructured several times (menubar renderer
++    filter, details-form rebuild, grid/list toggle), and a fixed-depth
++    chain silently breaks - and calls a method that doesn't exist on
++    whatever widget it lands on - every time that nesting changes.
++    """
++    w = widget.parentWidget()
++    while w is not None:
++        if hasattr(w, "import_asset"):
++            return w
++        w = w.parentWidget()
++    return None
++
++
+ class DragDropListView(QtWidgets.QListView):
+     """
+     Handle Dragging and Dropping from the Thumblist View in the MatLib Panel
+@@ -24,13 +41,7 @@
+             if hou.ui.paneTabUnderCursor():  # type: ignore
+                 if hou.ui.paneTabUnderCursor().type().name() != "PythonPanel":  # type: ignore
+                     self.state = True
+-                    panel = (
+-                        self.parentWidget()
+-                        .parentWidget()
+-                        .parentWidget()
+-                        .parentWidget()
+-                        .parentWidget()
+-                    )
++                    panel = _find_panel(self)
+ 
+         # Avoid multiple imports since dragLeave is fired multiple times
+         # and houdini as no way to catch a drop from another panel
+@@ -59,7 +70,7 @@
+         if not hou.node(node_path):
+             return
+         hou.node(node_path).setSelected(True)  # Select node for save script
+-        panel = self.parentWidget().parentWidget()
++        panel = _find_panel(self)
+         panel.save_asset()
+         self.state = False
+ 
+@@ -68,7 +79,7 @@
+             if hou.ui.paneTabUnderCursor():  # type: ignore
+                 if hou.ui.paneTabUnderCursor().type().name() != "PythonPanel":  # type: ignore
+                     self.state = True
+-                    panel = self.parentWidget().parentWidget()
++                    panel = _find_panel(self)
+                     # Restore Selection if we need it
+                     for index in self.index_saved:
+                         panel.thumblist.setCurrentIndex(index)
+@@ -76,15 +87,15 @@
+         # Avoid multiple imports since dragLeave is fired multiple times
+         # and houdini as no way to catch a drop from another panel
+         if self.state:
+-            # Import if we didn't register an import recently
+-            sec = datetime.time(datetime.now()).second
+-            msec = datetime.time(datetime.now()).microsecond / 1000000
+-            time = sec + msec
+-            diff = abs(time - self.currtime)
++            # Import if we didn't register an import recently. A
++            # monotonic clock (not seconds-within-the-minute) so the
++            # debounce can't spuriously reset at a minute boundary.
++            now = time.monotonic()
++            diff = abs(now - self.currtime)
+             if self.currtime != 0:
+                 if diff > 0.15:
+-                    self.currtime = time
+-                    panel = self.parentWidget().parentWidget()
++                    self.currtime = now
++                    panel = _find_panel(self)
+                     panel.import_asset()
+                     self.state = False
+                     event.accept()
+@@ -92,8 +103,8 @@
+                     return  # Wait and avoid multiimport
+             else:
+                 # Import on first Drag
+-                self.currtime = time
+-                panel = self.parentWidget().parentWidget()
++                self.currtime = now
++                panel = _find_panel(self)
+                 panel.import_asset()
+                 event.accept()
+                 self.state = False
+@@ -102,7 +113,7 @@
+ 
+     def dragEnterEvent(self, event: QtGui.QDragEnterEvent) -> None:
+         print("Enter")
+-        panel = self.parentWidget().parentWidget()
++        panel = _find_panel(self)
+         # Clear and store selection if not empty so we avoid accidental import
+         if panel.thumblist.selectedIndexes():
+             self.index_saved = panel.thumblist.selectedIndexes()
+diff -ruN a/scripts/python/matlib/panel/panel.py b/scripts/python/matlib/panel/panel.py
+--- a/scripts/python/matlib/panel/panel.py	2026-07-15 17:28:10
++++ b/scripts/python/matlib/panel/panel.py	2026-07-15 17:30:53
+@@ -33,6 +33,160 @@
+ importlib.reload(upgrader)
+ 
+ 
++class MaterialItemDelegate(QtWidgets.QStyledItemDelegate):
++    """Paints each material tile as thumbnail + name line + a greyed renderer
++    line beneath it, in both grid (icon on top, text below) and list (icon
++    left, text right) modes. Any failure falls back to the default painting so
++    a bad case degrades to a plain name rather than breaking the view."""
++
++    PAD = 4
++    GAP = 8
++    DIM = QtGui.QColor(150, 150, 150)
++
++    def __init__(self, renderer_role, parent=None):
++        super().__init__(parent)
++        self._renderer_role = renderer_role
++
++    @staticmethod
++    def _to_pixmap(icon):
++        """The model returns a QImage for the thumbnail (0 before it renders);
++        normalise to a QPixmap for painting, or None if there's nothing."""
++        if isinstance(icon, QtGui.QPixmap):
++            return icon if not icon.isNull() else None
++        if isinstance(icon, QtGui.QImage):
++            if icon.isNull():
++                return None
++            return QtGui.QPixmap.fromImage(icon)
++        if isinstance(icon, QtGui.QIcon):
++            pm = icon.pixmap(256, 256)
++            return pm if not pm.isNull() else None
++        return None
++
++    def paint(self, painter, option, index):
++        try:
++            self._paint(painter, option, index)
++        except Exception:
++            super().paint(painter, option, index)
++
++    def _paint(self, painter, option, index):
++        painter.save()
++
++        selected = bool(option.state & QtWidgets.QStyle.StateFlag.State_Selected)
++        alternate = bool(
++            option.features & QtWidgets.QStyleOptionViewItem.ViewItemFeature.Alternate
++        )
++        if selected:
++            painter.fillRect(option.rect, option.palette.highlight())
++        elif alternate:
++            painter.fillRect(option.rect, option.palette.alternateBase())
++
++        rect = option.rect
++        icon = self._to_pixmap(index.data(QtCore.Qt.ItemDataRole.DecorationRole))
++        name = index.data(QtCore.Qt.ItemDataRole.DisplayRole) or ""
++        renderer = index.data(self._renderer_role) or ""
++
++        is_list = False
++        try:
++            is_list = (
++                option.widget.viewMode()
++                == QtWidgets.QListView.ViewMode.ListMode
++            )
++        except Exception:
++            is_list = False
++
++        name_font = QtGui.QFont(option.font)
++        rend_font = QtGui.QFont(option.font)
++        # Sub-line reads as secondary via the grey colour, not by being tiny:
++        # keep it at the name size with a 12pt floor.
++        rend_font.setPointSizeF(max(option.font.pointSizeF(), 12.0))
++        fm_name = QtGui.QFontMetrics(name_font)
++        fm_rend = QtGui.QFontMetrics(rend_font)
++        h_name = fm_name.height()
++        h_rend = fm_rend.height()
++
++        name_color = (
++            option.palette.highlightedText().color()
++            if selected
++            else option.palette.text().color()
++        )
++
++        pad = self.PAD
++        if is_list:
++            icon_side = max(rect.height() - 2 * pad, 1)
++            if icon is not None:
++                scaled = icon.scaled(
++                    icon_side, icon_side,
++                    QtCore.Qt.AspectRatioMode.KeepAspectRatio,
++                    QtCore.Qt.TransformationMode.SmoothTransformation,
++                )
++                iy = rect.top() + (rect.height() - scaled.height()) // 2
++                painter.drawPixmap(rect.left() + pad, iy, scaled)
++            text_left = rect.left() + pad + icon_side + self.GAP
++            text_w = max(rect.right() - text_left - pad, 1)
++            block_h = h_name + (h_rend if renderer else 0)
++            top = rect.top() + (rect.height() - block_h) // 2
++            painter.setFont(name_font)
++            painter.setPen(name_color)
++            painter.drawText(
++                QtCore.QRect(text_left, top, text_w, h_name),
++                QtCore.Qt.AlignmentFlag.AlignLeft
++                | QtCore.Qt.AlignmentFlag.AlignVCenter,
++                fm_name.elidedText(
++                    name, QtCore.Qt.TextElideMode.ElideRight, text_w
++                ),
++            )
++            if renderer:
++                painter.setFont(rend_font)
++                painter.setPen(self.DIM)
++                painter.drawText(
++                    QtCore.QRect(text_left, top + h_name, text_w, h_rend),
++                    QtCore.Qt.AlignmentFlag.AlignLeft
++                    | QtCore.Qt.AlignmentFlag.AlignVCenter,
++                    fm_rend.elidedText(
++                        renderer, QtCore.Qt.TextElideMode.ElideRight, text_w
++                    ),
++                )
++        else:
++            text_w = max(rect.width() - 2 * pad, 1)
++            block_h = h_name + (h_rend if renderer else 0)
++            icon_area = max(rect.height() - block_h - 2 * pad, 1)
++            icon_side = max(min(icon_area, rect.width() - 2 * pad), 1)
++            if icon is not None:
++                scaled = icon.scaled(
++                    icon_side, icon_side,
++                    QtCore.Qt.AspectRatioMode.KeepAspectRatio,
++                    QtCore.Qt.TransformationMode.SmoothTransformation,
++                )
++                ix = rect.left() + (rect.width() - scaled.width()) // 2
++                painter.drawPixmap(ix, rect.top() + pad, scaled)
++            text_top = rect.top() + pad + icon_side
++            painter.setFont(name_font)
++            painter.setPen(name_color)
++            painter.drawText(
++                QtCore.QRect(rect.left() + pad, text_top, text_w, h_name),
++                QtCore.Qt.AlignmentFlag.AlignHCenter
++                | QtCore.Qt.AlignmentFlag.AlignVCenter,
++                fm_name.elidedText(
++                    name, QtCore.Qt.TextElideMode.ElideRight, text_w
++                ),
++            )
++            if renderer:
++                painter.setFont(rend_font)
++                painter.setPen(self.DIM)
++                painter.drawText(
++                    QtCore.QRect(
++                        rect.left() + pad, text_top + h_name, text_w, h_rend
++                    ),
++                    QtCore.Qt.AlignmentFlag.AlignHCenter
++                    | QtCore.Qt.AlignmentFlag.AlignVCenter,
++                    fm_rend.elidedText(
++                        renderer, QtCore.Qt.TextElideMode.ElideRight, text_w
++                    ),
++                )
++
++        painter.restore()
++
++
+ class MatLibPanel(QtWidgets.QWidget):
+     """Constructs the Python panel Widget for the MatLib and provides Views to the Models"""
+ 
+@@ -75,11 +229,16 @@
+             self.cat_list.setModel(self.category_sorted_model)
+         self.thumblist.setModel(self.material_sorted_model)
+         self.thumblist.setSelectionModel(self.material_selection_model)
++        self.thumb_delegate = MaterialItemDelegate(
++            self.material_model.RendererLabelRole, self.thumblist
++        )
++        self.thumblist.setItemDelegate(self.thumb_delegate)
+ 
+         self.material_selection_model.selectionChanged.connect(self.update_details_view)
+         self.filter_renderer()
+         self.click_slider.setValue(self.prefs.thumbsize)
+         self.slide()
++        self.apply_view_state()
+ 
+     def open(self) -> None:
+         """Open the currently in preferences specified library"""
+@@ -152,6 +311,9 @@
+         else:
+             self.cat_list.setVisible(False)
+             self.action_catview.setChecked(False)
++        # Remember the choice across sessions
++        self.prefs.show_categories = self.action_catview.isChecked()
++        self.prefs.save()
+ 
+     def toggle_detailsview(self) -> None:
+         """Show and Hide the Details View via Menu"""
+@@ -163,7 +325,99 @@
+         else:
+             details_widget.setHidden(True)
+             self.action_detailsview.setChecked(False)
++        # Remember the choice across sessions
++        self.prefs.show_details = self.action_detailsview.isChecked()
++        self.prefs.save()
+ 
++    def apply_view_state(self) -> None:
++        """Apply the persisted category/details visibility from preferences"""
++        self.action_catview.setChecked(self.prefs.show_categories)
++        self.cat_list.setVisible(self.prefs.show_categories)
++        self.action_detailsview.setChecked(self.prefs.show_details)
++        self.ui.details_widget.setHidden(not self.prefs.show_details)  # type: ignore
++        self.apply_view_mode()
++
++    def apply_view_mode(self) -> None:
++        """Apply the persisted grid/list view mode to the thumbnail list and
++        sync the toggle button and menu. The size slider drives icon size in
++        both modes: grid icons grow (fewer per row), list rows grow taller.
++        Wrapped so a bad state falls back to grid instead of hanging."""
++        if not self.material_model:
++            return
++        ts = self.material_model.thumbsize
++        try:
++            if self.prefs.view_mode == "list":
++                self.thumblist.setViewMode(QtWidgets.QListView.ViewMode.ListMode)
++                self.thumblist.setFlow(QtWidgets.QListView.Flow.TopToBottom)
++                self.thumblist.setWrapping(False)
++                self.thumblist.setIconSize(QtCore.QSize(ts, ts))
++                # Explicit, always-valid row size (never an empty QSize, which
++                # was the crash/hang source): full-width rows, height fits the
++                # icon and the two text lines.
++                vw = self.thumblist.viewport().width()
++                row_w = vw if vw > 80 else 400
++                row_h = max(ts + 14, 52)
++                self.thumblist.setGridSize(QtCore.QSize(row_w, row_h))
++                self.thumblist.setAlternatingRowColors(True)
++            else:
++                self.thumblist.setViewMode(QtWidgets.QListView.ViewMode.IconMode)
++                self.thumblist.setAlternatingRowColors(False)
++                self.thumblist.setFlow(QtWidgets.QListView.Flow.LeftToRight)
++                self.thumblist.setWrapping(True)
++                self.thumblist.setIconSize(QtCore.QSize(ts, ts))
++                # Extra height over the icon for the two text lines.
++                self.thumblist.setGridSize(QtCore.QSize(ts + 10, ts + 56))
++            self.thumblist.setResizeMode(QtWidgets.QListView.ResizeMode.Adjust)
++        except Exception as e:
++            print(
++                "egMatLib: view mode switch failed ("
++                + str(e)
++                + ") - falling back to grid"
++            )
++            try:
++                self.thumblist.setViewMode(QtWidgets.QListView.ViewMode.IconMode)
++                self.thumblist.setGridSize(QtCore.QSize(ts + 10, ts + 56))
++            except Exception:
++                pass
++        self._sync_view_mode_controls()
++
++    def _sync_view_mode_controls(self) -> None:
++        """Reflect prefs.view_mode on the toggle button and menu. Sets both
++        menu actions explicitly (one on, one off) so they can never both read
++        as selected, and suppresses handler re-entry while doing so."""
++        self._suppress_view_signals = True
++        try:
++            is_list = self.prefs.view_mode == "list"
++            if hasattr(self, "cb_viewmode"):
++                self.cb_viewmode.setChecked(is_list)
++            if getattr(self, "view_actions", None):
++                grid_act = self.view_actions.get("grid")
++                list_act = self.view_actions.get("list")
++                if grid_act is not None:
++                    grid_act.setChecked(not is_list)
++                if list_act is not None:
++                    list_act.setChecked(is_list)
++        finally:
++            self._suppress_view_signals = False
++
++    def _set_view_mode(self, mode: str) -> None:
++        """Central entry: persist and apply a view mode ('grid' or 'list')."""
++        self.prefs.view_mode = mode
++        self.prefs.save()
++        self.apply_view_mode()
++
++    def on_viewmode_button(self, checked: bool) -> None:
++        """Filter-row toggle: checked = list, unchecked = grid."""
++        if getattr(self, "_suppress_view_signals", False):
++            return
++        self._set_view_mode("list" if checked else "grid")
++
++    def on_viewmode_menu(self, action) -> None:
++        """View-menu Grid/List selection."""
++        if getattr(self, "_suppress_view_signals", False):
++            return
++        self._set_view_mode("list" if action.text().startswith("List") else "grid")
++
+     def init_ui(self) -> None:
+         """Creates the panel-view on load"""
+         # Load UI from ui.file
+@@ -177,8 +431,40 @@
+         self.ui = loader.load(file)
+         file.close()
+ 
++        # Apply Houdini's own Qt stylesheet so standard widgets (sliders,
++        # combo boxes, etc.) render like native Houdini UI instead of the
++        # OS-default Qt style. hou.qt.styleSheet() is SideFX's documented
++        # mechanism for this in custom PySide panels. Widget-specific
++        # overrides set later (cb_favsonly/cb_viewmode) still take
++        # precedence for their own selectors.
++        try:
++            self.ui.setStyleSheet(hou.qt.styleSheet())
++        except AttributeError:
++            pass
++
++        # Match Houdini's UI font and track the user's Global UI Size
++        # preference. Empirical finding: Qt text in the panel renders
++        # visually ~1pt smaller than Houdini's native UI text at the same
++        # nominal point size, so nudge up by one point to match.
++        try:
++            hou_font = hou.qt.mainWindow().font()
++            # Target 12pt: on setups reporting 11pt the +1 compensates the
++            # Qt-vs-native rendering difference; on setups already at 12pt
++            # a blind +1 overshot to 13 (observed), so floor instead of add.
++            if 0 < hou_font.pointSizeF() < 12.0:
++                hou_font.setPointSizeF(12.0)
++            self.ui.setFont(hou_font)
++        except AttributeError:
++            pass
++
+         # Load Ui Element so self
+         self.menu = self.ui.findChild(QtWidgets.QMenuBar, "menubar")
++        if self.menu is not None:
++            # Design pass: menu bar background + no border.
++            # Scoped to this widget only (not an ancestor) so it can't
++            # knock unrelated descendants off their native styling the
++            # way styling details_widget did.
++            self.menu.setStyleSheet("QMenuBar { background-color: #3b3b3b; border: none; }")
+         self.action_prefs = self.ui.action_prefs  # type: ignore
+         self.action_prefs.triggered.connect(self.show_prefs)
+ 
+@@ -208,8 +494,22 @@
+ 
+         # Overwrite the widgets for Drag and Drop in dragdrop_widgets.py
+         self.centralwidget = self.ui.centralwidget  # type: ignore
++
++        # 1px divider between the QMenuBar and the filter row below it
++        # (search filter, favorites, grid/list toggle, size slider), same
++        # dark grey as the slider's dark segment (ClickSlider.RIGHT_COLOR).
++        central_layout = self.centralwidget.layout()
++        if central_layout is not None:
++            menu_divider = QtWidgets.QWidget()
++            menu_divider.setAttribute(
++                QtCore.Qt.WidgetAttribute.WA_StyledBackground, True
++            )
++            menu_divider.setFixedHeight(1)
++            menu_divider.setStyleSheet("background-color: #1a1a1a;")
++            central_layout.insertWidget(0, menu_divider)
++
+         self.thumblist = self.ui.thumbview  # type: ignore
+-        self.thumblist.doubleClicked.connect(self.import_asset)
++        self.thumblist.doubleClicked.connect(self.import_asset_auto)
+         self.thumblist.clicked.connect(self.update_details_view)
+ 
+         # Category UI
+@@ -220,12 +520,101 @@
+         self.line_filter.textEdited.connect(self.filter_thumb_view)
+ 
+         self.cb_favsonly = self.ui.cb_FavsOnly  # type: ignore
+-        self.cb_favsonly.stateChanged.connect(self.filter_favs)
++        # Favorites toggle is a checkable icon button (star.svg). The icon
++        # is loaded from the plugin folder at runtime because .ui resource
++        # icons do not survive runtime loading in Houdini.
++        try:
++            ui_dir = os.path.join(
++                hou.getenv("EGMATLIB"), "scripts", "python", "matlib", "ui"
++            )
++            icon_off = os.path.join(ui_dir, "star.svg")
++            icon_on = os.path.join(ui_dir, "star_on.svg")
++            if os.path.exists(icon_off):
++                fav_icon = QtGui.QIcon()
++                fav_icon.addFile(
++                    icon_off, QtCore.QSize(),
++                    QtGui.QIcon.Mode.Normal, QtGui.QIcon.State.Off,
++                )
++                fav_icon.addFile(
++                    icon_on if os.path.exists(icon_on) else icon_off,
++                    QtCore.QSize(),
++                    QtGui.QIcon.Mode.Normal, QtGui.QIcon.State.On,
++                )
++                self.cb_favsonly.setIcon(fav_icon)
++                self.cb_favsonly.setIconSize(QtCore.QSize(18, 18))
++            # Flat icon look matching Houdini toolbar buttons: no button
++            # chrome; subtle hover feedback only. State reads from the
++            # outline/filled icon swap, not from button decoration.
++            self.cb_favsonly.setFixedSize(QtCore.QSize(24, 24))
++            # Houdini's theme draws QToolButton chrome via border-image,
++            # which a plain border:none does not clear - kill it explicitly.
++            self.cb_favsonly.setStyleSheet(
++                "QToolButton { border: none; border-image: none;"
++                " background: none; padding: 0px; margin: 0px; }"
++                "QToolButton:checked { border: none; border-image: none;"
++                " background: none; }"
++                "QToolButton:pressed { border: none; border-image: none;"
++                " background: none; }"
++                "QToolButton:hover { background: rgba(255, 255, 255, 20);"
++                " border-radius: 3px; }"
++            )
++        except (TypeError, AttributeError):
++            pass
++        self.cb_favsonly.toggled.connect(self.filter_favs)
+ 
++        # Grid/List view-mode toggle: checkable icon button next to the star.
++        # Unchecked = grid (icon mode), checked = list mode. Icon shows the
++        # current mode (grid icon in grid, list icon in list); loaded from the
++        # plugin folder at runtime like the star.
++        self.cb_viewmode = self.ui.cb_ViewMode  # type: ignore
++        try:
++            vm_dir = os.path.join(
++                hou.getenv("EGMATLIB"), "scripts", "python", "matlib", "ui"
++            )
++            icon_grid = os.path.join(vm_dir, "grid.svg")
++            icon_list = os.path.join(vm_dir, "list.svg")
++            if os.path.exists(icon_grid):
++                vm_icon = QtGui.QIcon()
++                vm_icon.addFile(
++                    icon_grid, QtCore.QSize(),
++                    QtGui.QIcon.Mode.Normal, QtGui.QIcon.State.Off,
++                )
++                vm_icon.addFile(
++                    icon_list if os.path.exists(icon_list) else icon_grid,
++                    QtCore.QSize(),
++                    QtGui.QIcon.Mode.Normal, QtGui.QIcon.State.On,
++                )
++                self.cb_viewmode.setIcon(vm_icon)
++                self.cb_viewmode.setIconSize(QtCore.QSize(18, 18))
++            self.cb_viewmode.setFixedSize(QtCore.QSize(24, 24))
++            self.cb_viewmode.setStyleSheet(
++                "QToolButton { border: none; border-image: none;"
++                " background: none; padding: 0px; margin: 0px; }"
++                "QToolButton:checked { border: none; border-image: none;"
++                " background: none; }"
++                "QToolButton:pressed { border: none; border-image: none;"
++                " background: none; }"
++                "QToolButton:hover { background: rgba(255, 255, 255, 20);"
++                " border-radius: 3px; }"
++            )
++        except (TypeError, AttributeError):
++            pass
++        self.cb_viewmode.toggled.connect(self.on_viewmode_button)
++
+         # Updated Details UI
+         self.details = self.ui.details_widget  # type: ignore
+         self.line_name = self.ui.line_name  # type: ignore
+         self.line_cat = self.ui.line_cat  # type: ignore
++
++        # Category mode widgets live in matlib.ui (details form) since the
++        # Houdini-style form rebuild: dropdown = single-category (default),
++        # textbox = multi-category, checkbox toggles which input is active.
++        self.cat_combo = self.ui.cat_combo  # type: ignore
++        self.box_multicat = self.ui.box_multicat  # type: ignore
++        self.box_multicat.toggled.connect(self.toggle_multicat)
++        self.line_cat.setEnabled(False)
++        self.cat_combo.setEnabled(True)
++
+         self.line_tags = self.ui.line_tags  # type: ignore
+         self.line_id = self.ui.line_id  # type: ignore
+         self.line_id.setDisabled(True)
+@@ -233,33 +622,84 @@
+         self.line_date = self.ui.line_date  # type: ignore
+         self.line_date.setDisabled(True)
+ 
++        # Greyed renderer row inserted directly under Name (e.g. "USD
++        # Redshift" / "Redshift" / "Karma"). Inserted in code so we don't have
++        # to renumber the whole form; disabled so it reads as metadata.
++        self.line_renderer = QtWidgets.QLineEdit()
++        self.line_renderer.setReadOnly(True)
++        self.line_renderer.setDisabled(True)
++        self.line_renderer.setStyleSheet(
++            "QLineEdit:disabled { background-color: #363636; }"
++        )
++        try:
++            details_form = self.ui.findChild(  # type: ignore
++                QtWidgets.QFormLayout, "details_form"
++            )
++            name_row, _ = details_form.getWidgetPosition(self.line_name)
++            details_form.insertRow(name_row + 1, "Type", self.line_renderer)
++        except Exception:
++            pass
++
+         self.box_fav = self.ui.cb_set_fav  # type: ignore
+         self.box_fav.clicked.connect(self.box_fav_clicktoggle)
+ 
+         self.btn_update = self.ui.btn_update  # type: ignore
+         self.btn_update.clicked.connect(self.user_update_asset)
+ 
+-        # Material
+-        self.cb_redshift = self.ui.cb_Redshift  # type: ignore
+-        self.cb_mantra = self.ui.cb_Mantra  # type: ignore
+-        self.cb_arnold = self.ui.cb_Arnold  # type: ignore
+-        self.cb_octane = self.ui.cb_Octane  # type: ignore
+-        self.cb_matx = self.ui.cb_MatX  # type: ignore
++        # Renderer filter lives in a menubar "Renderer" menu (moved out
++        # of the details view). Labels must match the renderer strings the
++        # filter compares against.
++        self.menu_renderer = QtWidgets.QMenu("Renderer", self.menu)
++        self.menu.addMenu(self.menu_renderer)
++        self.renderer_action_group = QtGui.QActionGroup(self.menu_renderer)
++        self.renderer_action_group.setExclusive(True)
++        self.renderer_actions = {}
++        renderer_defs = [
++            ("All", True),
++            ("Karma", self.prefs.renderer_matx_enabled),
++            ("Mantra", self.prefs.renderer_mantra_enabled),
++            ("Redshift", self.prefs.renderer_redshift_enabled),
++            ("Arnold", self.prefs.renderer_arnold_enabled),
++            ("Octane", self.prefs.renderer_octane_enabled),
++        ]
++        for label, visible in renderer_defs:
++            act = self.menu_renderer.addAction(label)
++            act.setCheckable(True)
++            act.setVisible(visible)
++            self.renderer_action_group.addAction(act)
++            self.renderer_actions[label] = act
+ 
+-        self.cb_matx.setVisible(self.prefs.renderer_matx_enabled)
+-        self.cb_mantra.setVisible(self.prefs.renderer_mantra_enabled)
+-        self.cb_arnold.setVisible(self.prefs.renderer_arnold_enabled)
+-        self.cb_redshift.setVisible(self.prefs.renderer_redshift_enabled)
+-        self.cb_octane.setVisible(self.prefs.renderer_octane_enabled)
++        # Restore the last selected renderer from preferences
++        last_act = self.renderer_actions.get(self.prefs.last_renderer)
++        if last_act is None or not last_act.isVisible():
++            last_act = self.renderer_actions["All"]
++        last_act.setChecked(True)
++        self.renderer_action_group.triggered.connect(self.renderer_menu_changed)
+ 
+-        self.cb_showcat = self.ui.findChild(QtWidgets.QCheckBox, "cb_showCat")
++        # "Render All Thumbnails" lives in the Library menu (moved out of
++        # the material right-click menu)
++        menu_file = self.ui.findChild(QtWidgets.QMenu, "menu_file")
++        if menu_file is not None:
++            self.action_render_all = menu_file.addAction("Render All Thumbnails")
++            self.action_render_all.triggered.connect(self.update_all_assets)
+ 
+-        self.cb_redshift.toggled.connect(self.filter_renderer)
+-        self.cb_mantra.toggled.connect(self.filter_renderer)
+-        self.cb_arnold.toggled.connect(self.filter_renderer)
+-        self.cb_octane.toggled.connect(self.filter_renderer)
+-        self.cb_matx.toggled.connect(self.filter_renderer)
++        # Grid / List view toggle in the View menu (exclusive), mirrored by
++        # the filter-row toggle button. Both drive prefs.view_mode.
++        self.view_actions = {}
++        menu_view = self.ui.findChild(QtWidgets.QMenu, "menuView")
++        if menu_view is not None:
++            menu_view.addSeparator()
++            self.view_action_group = QtGui.QActionGroup(menu_view)
++            self.view_action_group.setExclusive(True)
++            for label in ("Grid", "List"):
++                act = menu_view.addAction(label + " View")
++                act.setCheckable(True)
++                self.view_action_group.addAction(act)
++                self.view_actions[label.lower()] = act
++            self.view_action_group.triggered.connect(self.on_viewmode_menu)
+ 
++        self.cb_showcat = self.ui.findChild(QtWidgets.QCheckBox, "cb_showCat")
++
+         # IconSize Slider
+         self.slide_iconsize = self.ui.slide_iconSize  # type: ignore
+ 
+@@ -277,6 +717,11 @@
+         self.slider_layout = self.ui.slider_layout  # type: ignore
+         self.slider_layout.addWidget(self.click_slider)
+         self.click_slider.valueChanged.connect(self.slide)
++        # Houdini-22-style look (groove/handle) is painted directly by
++        # ClickSlider.paintEvent - QSS sub-page/add-page styling proved
++        # unreliable (colors landed on the correct side, but the declared
++        # heights didn't) so this widget draws itself deterministically
++        # instead of relying on the style/stylesheet system for it.
+ 
+         # RC Menus
+         self.thumblist.customContextMenuRequested.connect(self.thumblist_rc_menu)
+@@ -289,16 +734,71 @@
+ 
+         self.setLayout(mainlayout)
+ 
++    def get_category_names(self) -> list[str]:
++        """Return all existing category names, excluding the 'All' pseudo-category"""
++        names = []
++        if not self.category_sorted_model:
++            return names
++        for elem in range(self.category_sorted_model.rowCount()):
++            cidx = self.category_sorted_model.index(elem, 0)
++            name = self.category_sorted_model.data(cidx)
++            if name and name != "All":
++                names.append(name)
++        return names
++
++    def assign_category(self, category: str, replace: bool) -> None:
++        """Move (replace=True) or Add (replace=False) all selected materials
++        to the given category. Uses the same signal pattern and model
++        mutator as user_update_asset to keep Qt model state consistent."""
++        if not self.material_model or not self.category_model:
++            return
++        indexes = self.material_selection_model.selectedIndexes()
++        if not indexes:
++            return
++        self.material_model.layoutAboutToBeChanged.emit()
++        self.category_model.layoutAboutToBeChanged.emit()
++
++        self.category_model.check_add_category(category)
++        for index in indexes:
++            idx = self.material_model.index(
++                self.material_sorted_model.mapToSource(index).row()
++            )
++            asset = self.material_model.assets[idx.row()]
++            if replace:
++                new_cats = [category]
++            else:
++                new_cats = [c for c in asset.categories if c and c.strip() != ""]
++                if category not in new_cats:
++                    new_cats.append(category)
++            self.material_model.set_assetdata(
++                idx,
++                asset.name,
++                ", ".join(new_cats),
++                ", ".join(asset.tags),
++                asset.fav,
++            )
++        self.material_model.update_outofdate_thumb_list()
++        self.material_model.layoutChanged.emit()
++        self.category_model.layoutChanged.emit()
++
+     def thumblist_rc_menu(self) -> None:
+         """Handle Right Click Menus available in Thumblist"""
+         cmenu = QtWidgets.QMenu(self)
+ 
+-        action_import = cmenu.addAction("Import to Scene")
++        action_import_mat = cmenu.addAction("Import to MAT")
++        action_import_lop = cmenu.addAction("Import to LOP")
+         action_toggle_fav = cmenu.addAction("Toggle Favorite")
+         action_render = cmenu.addAction("Rerender Thumbnail")
+-        action_renderall = cmenu.addAction("Render All Thumbnails")
+         # action_thumb_viewport = cmenu.addAction("Thumbnail from Viewport")
+         cmenu.addSeparator()
++        move_menu = cmenu.addMenu("Move to")
++        add_menu = cmenu.addMenu("Add to")
++        move_actions = {}
++        add_actions = {}
++        for cat_name in self.get_category_names():
++            move_actions[move_menu.addAction(cat_name)] = cat_name
++            add_actions[add_menu.addAction(cat_name)] = cat_name
++        cmenu.addSeparator()
+         action_delete = cmenu.addAction("Delete Entry")
+         action = cmenu.exec_(QtGui.QCursor.pos())
+ 
+@@ -306,12 +806,16 @@
+             self.delete_asset()
+         elif action == action_render:
+             self.update_single_asset()
+-        elif action == action_import:
+-            self.import_asset()
+-        elif action == action_renderall:
+-            self.update_all_assets()
++        elif action == action_import_mat:
++            self.import_asset_to_mat()
++        elif action == action_import_lop:
++            self.import_asset_to_lop()
+         elif action == action_toggle_fav:
+             self.toggle_fav()
++        elif action in move_actions:
++            self.assign_category(move_actions[action], replace=True)
++        elif action in add_actions:
++            self.assign_category(add_actions[action], replace=False)
+ 
+     def catlist_rc_menu(self) -> None:
+         """Handle Right Click Menus available in the Categegory list"""
+@@ -354,15 +858,8 @@
+             return
+         prefs_dialog.PrefsDialog(self.prefs).exec_()
+ 
+-        # Update Thumblist Grid
+-        self.thumblist.setIconSize(
+-            QtCore.QSize(self.material_model.thumbsize, self.material_model.thumbsize)
+-        )
+-        self.thumblist.setGridSize(
+-            QtCore.QSize(
+-                self.material_model.thumbsize + 10, self.material_model.thumbsize + 40
+-            )
+-        )
++        # Update Thumblist Grid (mode-aware, respects grid/list)
++        self.apply_view_mode()
+         self.update_renderer_toggles()
+         self.prefs.load()
+         self.material_model.switch_model_data()
+@@ -370,18 +867,43 @@
+         self.category_model.switch_model_data()
+ 
+     def update_renderer_toggles(self):
+-        self.cb_matx.setVisible(self.prefs.renderer_matx_enabled)
+-        self.cb_mantra.setVisible(self.prefs.renderer_mantra_enabled)
+-        self.cb_arnold.setVisible(self.prefs.renderer_arnold_enabled)
+-        self.cb_redshift.setVisible(self.prefs.renderer_redshift_enabled)
+-        self.cb_octane.setVisible(self.prefs.renderer_octane_enabled)
++        """Show/hide the Renderer-menu actions from the per-renderer prefs
++        flags. Replaces the old checkbox toggles (those widgets were removed
++        when the renderer filter moved to the menubar), and is what makes the
++        menu update live when renderers are enabled/disabled in prefs or by
++        saving a material of a new renderer."""
++        if not hasattr(self, "renderer_actions"):
++            return
++        flags = {
++            "Karma": self.prefs.renderer_matx_enabled,
++            "Mantra": self.prefs.renderer_mantra_enabled,
++            "Redshift": self.prefs.renderer_redshift_enabled,
++            "Arnold": self.prefs.renderer_arnold_enabled,
++            "Octane": self.prefs.renderer_octane_enabled,
++        }
++        for label, visible in flags.items():
++            act = self.renderer_actions.get(label)
++            if act is not None:
++                act.setVisible(visible)
++        # If the currently-checked renderer just got hidden, fall back to All.
++        checked = self.renderer_action_group.checkedAction()
++        if checked is not None and not checked.isVisible():
++            self.renderer_actions["All"].setChecked(True)
++            self.prefs.last_renderer = "All"
+ 
+     def cleanup_db(self) -> None:
+         """Removes orphan data from disk and highlights missing thumbnails"""
+         if not self.material_model:
+             hou.ui.displayMessage("Please open a library first")  # type: ignore
+             return
+-        self.material_model.cleanup_db()
++        rescued = self.material_model.cleanup_db()
++        if rescued:
++            self.category_model.check_add_category("Uncategorized")
++        normalized = self.category_model.normalize_categories()
++        if normalized:
++            print(f"Cleaned {normalized} legacy entr(y/ies) in the category list")
++        self.category_model.layoutChanged.emit()
++        self.material_model.layoutChanged.emit()
+ 
+     def import_lib_v1(self) -> None:
+         if not self.material_model or not self.category_model:
+@@ -508,11 +1030,7 @@
+ 
+     def filter_favs(self) -> None:
+         """Get Filter from user and trigger view update"""
+-        fav_filter = (
+-            True
+-            if self.cb_favsonly.checkState() == QtCore.Qt.CheckState.Checked
+-            else ""
+-        )
++        fav_filter = True if self.cb_favsonly.isChecked() else ""
+         if not self.material_model or not self.category_model:
+             return
+         self.material_sorted_model.setFilter(
+@@ -520,11 +1038,18 @@
+         )
+         self.material_sorted_model.sort(0)
+ 
++    def renderer_menu_changed(self, action) -> None:
++        """Renderer picked in the menubar: apply filter and remember it"""
++        self.filter_renderer()
++        self.prefs.last_renderer = action.text()
++        self.prefs.save()
++
+     def filter_renderer(self) -> None:
+         """Get Filter from user and trigger view update"""
+         if not self.material_model or not self.category_model:
+             return
+-        render_filter = self.cb_matx.group().checkedButton().text()
++        checked = self.renderer_action_group.checkedAction()
++        render_filter = checked.text() if checked is not None else "All"
+         if render_filter == "All":
+             render_filter = "all_renderers"
+         self.material_sorted_model.setFilter(
+@@ -547,7 +1072,10 @@
+ 
+             name = self.line_name.text()
+             tags = self.line_tags.text()
+-            cats = self.line_cat.text()
++            if self.box_multicat.isChecked():
++                cats = self.line_cat.text()
++            else:
++                cats = self.cat_combo.currentText()
+ 
+             fav = self.box_fav.isChecked()
+             self.category_model.check_add_category(cats)
+@@ -556,6 +1084,63 @@
+         self.material_model.layoutChanged.emit()
+         self.category_model.layoutChanged.emit()
+ 
++    def _insert_above_widget(self, anchor, widgets) -> bool:
++        """Insert widgets directly above anchor inside whatever (possibly
++        nested) layout holds it. Returns False if the layout wasn't found."""
++
++        def find(layout):
++            for i in range(layout.count()):
++                item = layout.itemAt(i)
++                if item.widget() is anchor:
++                    return layout, i
++                if item.layout():
++                    res = find(item.layout())
++                    if res:
++                        return res
++            return None
++
++        parent = anchor.parentWidget()
++        top = parent.layout() if parent else None
++        found = find(top) if top else None
++        if not found:
++            return False
++        layout, idx = found
++        for offset, w in enumerate(widgets):
++            layout.insertWidget(idx + offset, w)
++        return True
++
++    def _refresh_cat_combo(self) -> None:
++        """Repopulate the category dropdown from the current category list"""
++        current = self.cat_combo.currentText()
++        self.cat_combo.blockSignals(True)
++        self.cat_combo.clear()
++        self.cat_combo.addItems(self.get_category_names())
++        i = self.cat_combo.findText(current)
++        if i >= 0:
++            self.cat_combo.setCurrentIndex(i)
++        self.cat_combo.blockSignals(False)
++
++    def _set_cat_mode(self, multi: bool) -> None:
++        """Set single/multi category input mode without firing the toggle"""
++        self.box_multicat.blockSignals(True)
++        self.box_multicat.setChecked(multi)
++        self.box_multicat.blockSignals(False)
++        self.line_cat.setEnabled(multi)
++        self.cat_combo.setEnabled(not multi)
++
++    def toggle_multicat(self, checked: bool) -> None:
++        """User toggles category input mode. Pure mode switch: the textbox
++        content is preserved while disabled; whichever input is active when
++        Update is pressed wins."""
++        self.line_cat.setEnabled(checked)
++        self.cat_combo.setEnabled(not checked)
++        if not checked:
++            # Entering single mode: dropdown shows the first current category
++            first = self.line_cat.text().split(",")[0].strip()
++            i = self.cat_combo.findText(first)
++            if i >= 0:
++                self.cat_combo.setCurrentIndex(i)
++
+     def update_details_view(self) -> None:
+         """Update upon changes in Detail view"""
+         if not self.material_model or not self.category_model:
+@@ -564,8 +1149,10 @@
+             self.line_name.setText("")
+             self.line_id.setText("")
+             self.line_date.setText("")
++            self.line_renderer.setText("")
+             self.line_tags.setText("")
+             self.line_cat.setText("")
++            self._set_cat_mode(False)
+             self.box_fav.setCheckState(QtCore.Qt.CheckState.Unchecked)
+             return
+ 
+@@ -592,7 +1179,8 @@
+ 
+             fav.append(curr_asset.data(self.material_model.FavoriteRole))
+ 
+-        msg = "Multiple Values..." if len(indexes) > 1 else name
++        clean_name = name
++        msg = "Multiple Values..." if len(indexes) > 1 else clean_name
+         self.line_name.setText(msg)
+ 
+         msg = "Multiple Values..." if len(indexes) > 1 else asset_id
+@@ -601,6 +1189,13 @@
+         msg = "Multiple Values..." if len(indexes) > 1 else date
+         self.line_date.setText(msg)
+ 
++        if len(indexes) > 1:
++            self.line_renderer.setText("Multiple Values...")
++        else:
++            self.line_renderer.setText(
++                curr_asset.data(self.material_model.RendererLabelRole) or ""
++            )
++
+         msg = (
+             QtCore.Qt.CheckState.Checked
+             if fav[0] is True
+@@ -612,14 +1207,37 @@
+                 break
+         self.box_fav.setCheckState(msg)
+ 
+-        if sel_cats:
+-            msg = sel_cats[0] if len(set(sel_cats)) < 2 else "Multiple Values..."
+-            self.line_cat.setText(msg)
++        self._refresh_cat_combo()
++        cats_clean = [str(c).strip() for c in sel_cats if c and str(c).strip()]
++        if len(indexes) == 1:
++            if len(cats_clean) > 1:
++                # Material genuinely has multiple categories: auto-enable
++                # multi mode and show the full comma-separated list
++                self.line_cat.setText(", ".join(cats_clean))
++                self._set_cat_mode(True)
++            else:
++                single = cats_clean[0] if cats_clean else ""
++                self.line_cat.setText(single)
++                i = self.cat_combo.findText(single)
++                if i >= 0:
++                    self.cat_combo.setCurrentIndex(i)
++                self._set_cat_mode(False)
+         else:
+-            self.line_cat.setText("")
++            if len(set(cats_clean)) < 2:
++                single = cats_clean[0] if cats_clean else ""
++                self.line_cat.setText(single)
++                i = self.cat_combo.findText(single)
++                if i >= 0:
++                    self.cat_combo.setCurrentIndex(i)
++                self._set_cat_mode(False)
++            else:
++                self.line_cat.setText("Multiple Values...")
++                self._set_cat_mode(True)
+ 
+         if sel_tags:
+-            msg = msg = ", ".join(list(filter(None, set(sel_tags[0]))))
++            # dict.fromkeys dedupes while preserving order; a plain set()
++            # here made displayed tag order reshuffle unpredictably.
++            msg = ", ".join(dict.fromkeys(filter(None, sel_tags[0])))
+             if len(sel_tags) > 1:
+                 for elem in sel_tags:
+                     if elem != sel_tags[0]:
+@@ -646,7 +1264,8 @@
+ 
+     # Library Stuffs
+     def update_all_assets(self) -> None:
+-        """Rerenders all assets in the library - The UI is blocked for the duration of the render"""
++        """Rerenders all currently visible (filtered) assets in the library -
++        The UI is blocked for the duration of the render"""
+         if not self.material_model:
+             hou.ui.displayMessage("Please open a library first")  # type: ignore
+             return
+@@ -657,8 +1276,12 @@
+         ):  # type: ignore
+             return
+         self.material_model.layoutAboutToBeChanged.emit()
+-        for i in range(self.material_model.rowCount()):
+-            self.material_model.render_thumbnail(self.material_model.index(i))
++        # Iterate the filtered proxy, not the unfiltered source model, so
++        # this actually matches the "visible assets" wording above.
++        for row in range(self.material_sorted_model.rowCount()):
++            proxy_index = self.material_sorted_model.index(row, 0)
++            source_index = self.material_sorted_model.mapToSource(proxy_index)
++            self.material_model.render_thumbnail(source_index)
+         self.material_model.layoutChanged.emit()
+         hou.ui.displayMessage("Updating all Thumbnails finished")  # type: ignore
+ 
+@@ -731,7 +1354,16 @@
+             idx = self.usd_dialog_category_model.index(elem, 0)
+             cats.append(self.usd_dialog_category_model.data(idx))
+ 
+-        dialog = usd_dialog.UsdDialog(cats)
++        # Default the dialog to the category currently selected in the
++        # panel (skip the "All" pseudo-category and empty selections).
++        current_cat = ""
++        cat_selection = self.cat_list.selectedIndexes()
++        if cat_selection:
++            selected_name = cat_selection[0].data()
++            if selected_name and selected_name != "All":
++                current_cat = selected_name
++
++        dialog = usd_dialog.UsdDialog(cats, current_cat)
+         r = dialog.exec_()
+ 
+         if dialog.canceled or not r:
+@@ -761,7 +1393,7 @@
+         self.category_model.layoutChanged.emit()
+ 
+     def enable_renderer_on_add(self, renderer: str) -> None:
+-        if "MaterialX" or "Karma" in renderer:
++        if "MaterialX" in renderer or "Karma" in renderer:
+             self.prefs.renderer_matx_enabled = True
+         elif "Mantra" in renderer:
+             self.prefs.renderer_mantra_enabled = True
+@@ -773,29 +1405,48 @@
+             self.prefs.renderer_octane_enabled = True
+         self.prefs.save()
+ 
+-    def import_asset(self):
++    def import_asset(self, target: str = "auto"):
++        """Import the selected materials.
++
++        target: "auto" lets MatLib decide from the active network editor
++        (double-click); "mat" forces /mat; "lop" forces a LOP
++        materiallibrary. Materials that cannot live in the requested context
++        are skipped and collected into a single summary dialog."""
+         if not self.material_model or not self.category_model:
+             return
+-        """Import Material to scene"""
++        failures = []
+         for index in self.thumblist.selectedIndexes():
+-            self.material_model.import_asset_to_scene(
+-                self.material_sorted_model.mapToSource(index)
++            ok, reason = self.material_model.import_asset_to_scene(
++                self.material_sorted_model.mapToSource(index), target
+             )
++            if not ok and reason:
++                failures.append(reason)
++        if failures:
++            hou.ui.displayMessage(  # type: ignore
++                "Some materials could not be imported:\n\n" + "\n".join(failures)
++            )
+ 
++    def import_asset_auto(self, *args):
++        """Double-click handler: context-aware import. Ignores the model index
++        the doubleClicked signal emits so it never reaches the target arg."""
++        self.import_asset("auto")
++
++    def import_asset_to_mat(self):
++        """Explicitly import the selected materials into /mat."""
++        self.import_asset("mat")
++
++    def import_asset_to_lop(self):
++        """Explicitly import the selected materials into a LOP materiallibrary."""
++        self.import_asset("lop")
++
+     def slide(self) -> None:
+         """Set IconSize via Slider"""
+         if not self.material_model or not self.category_model:
+             return
+         self.material_model.thumbsize = self.click_slider.value()
+ 
+-        self.thumblist.setGridSize(
+-            QtCore.QSize(
+-                self.material_model.thumbsize + 10, self.material_model.thumbsize + 40
+-            )
+-        )
+-        self.thumblist.setIconSize(
+-            QtCore.QSize(self.material_model.thumbsize, self.material_model.thumbsize)
+-        )
++        # Apply sizing for the active mode (grid grows icons, list grows rows).
++        self.apply_view_mode()
+         # Also need to resize the images!
+         self.material_model.set_custom_iconsize(
+             QtCore.QSize(self.material_model.thumbsize, self.material_model.thumbsize)
+diff -ruN a/scripts/python/matlib/prefs/prefs.py b/scripts/python/matlib/prefs/prefs.py
+--- a/scripts/python/matlib/prefs/prefs.py	2026-07-15 17:28:10
++++ b/scripts/python/matlib/prefs/prefs.py	2026-07-15 17:30:53
+@@ -21,6 +21,11 @@
+         self._renderer_arnold_enabled = False
+         self._renderer_redshift_enabled = False
+         self._renderer_octane_enabled = False
++        # Panel view state: category list shown, details hidden by default
++        self._show_categories = True
++        self._show_details = False
++        self._last_renderer = "All"
++        self._view_mode = "grid"
+ 
+     def save(self) -> None:
+         """
+@@ -47,6 +52,10 @@
+         self.data["renderer_octane"] = self._renderer_octane_enabled
+         self.data["renderer_arnold"] = self._renderer_arnold_enabled
+         self.data["ballmode"] = self._ballmode
++        self.data["show_categories"] = self._show_categories
++        self.data["show_details"] = self._show_details
++        self.data["last_renderer"] = self._last_renderer
++        self.data["view_mode"] = self._view_mode
+ 
+         with open(self.path + ("/settings.json"), "w", encoding="utf-8") as lib_json:
+             json.dump(self.data, lib_json, indent=4)
+@@ -73,6 +82,11 @@
+             self._renderer_arnold_enabled = data["renderer_arnold"]
+             self._rendersamples = data["rendersamples"]
+             self._ballmode = data["ballmode"]
++            # .get() so existing settings.json without these keys still loads
++            self._show_categories = data.get("show_categories", True)
++            self._show_details = data.get("show_details", False)
++            self._last_renderer = data.get("last_renderer", "All")
++            self._view_mode = data.get("view_mode", "grid")
+ 
+             if os.path.exists(self._directory):
+                 return True
+@@ -130,6 +144,38 @@
+     @ballmode.setter
+     def ballmode(self, val: int) -> None:
+         self._ballmode = val
++
++    @property
++    def show_categories(self) -> bool:
++        return self._show_categories
++
++    @show_categories.setter
++    def show_categories(self, val: bool) -> None:
++        self._show_categories = val
++
++    @property
++    def show_details(self) -> bool:
++        return self._show_details
++
++    @show_details.setter
++    def show_details(self, val: bool) -> None:
++        self._show_details = val
++
++    @property
++    def last_renderer(self) -> str:
++        return self._last_renderer
++
++    @last_renderer.setter
++    def last_renderer(self, val: str) -> None:
++        self._last_renderer = val if val else "All"
++
++    @property
++    def view_mode(self) -> str:
++        return self._view_mode
++
++    @view_mode.setter
++    def view_mode(self, val: str) -> None:
++        self._view_mode = val if val in ("grid", "list") else "grid"
+ 
+     @property
+     def thumbsize(self) -> int:
+diff -ruN a/scripts/python/matlib/render/nodes.py b/scripts/python/matlib/render/nodes.py
+--- a/scripts/python/matlib/render/nodes.py	2026-07-15 17:28:10
++++ b/scripts/python/matlib/render/nodes.py	2026-07-15 17:30:53
+@@ -3,6 +3,7 @@
+ """
+ 
+ import os
++import re
+ import hou
+ 
+ import importlib
+@@ -28,14 +29,37 @@
+         self._import_path = None
+         self._hou_parent = None
+         self._use_existing_node = False
++        self._cop_info = {}
+ 
++    def get_active_network_editor(self):
++        """Return the NetworkEditor pane the user is most likely looking at.
++
++        Prefers a pane that is the visible (current) tab in its split,
++        falling back to any open NetworkEditor. Returns None if none exist.
++        Replaces the old "first NetworkEditor in paneTabs()" behaviour, which
++        picked an arbitrary editor when several were open and made
++        context-aware import land in the wrong network."""
++        editors = [
++            pt
++            for pt in hou.ui.paneTabs()  # type: ignore
++            if pt.type() == hou.paneTabType.NetworkEditor
++        ]
++        if not editors:
++            return None
++        visible = [e for e in editors if e.isCurrentTab()]
++        return (visible or editors)[0]
++
+     def get_current_network_node(self) -> None | hou.Node:
+-        """Return thre current Node in the Network Editor"""
+-        for pt in hou.ui.paneTabs():  # type: ignore
+-            if pt.type() == hou.paneTabType.NetworkEditor:
+-                return pt.currentNode().parent()
+-        return None
++        """Return the network node currently displayed in the active editor.
+ 
++        Uses the editor's pwd() (the network whose children are shown)
++        instead of currentNode().parent(), which crashed when nothing was
++        current in the picked pane."""
++        editor = self.get_active_network_editor()
++        if editor is None:
++            return None
++        return editor.pwd()
++
+     @property
+     def builder_node(self) -> hou.Node:
+         """
+@@ -82,6 +106,9 @@
+         if node.type().name() == "redshift_vopnet":
+             self._renderer = "Redshift"
+             self._builder = 1
++        elif "rs_usd_material_builder" in node.type().name():
++            self._renderer = "Redshift"
++            self._builder = 1
+         elif node.type().name() == "materialbuilder":
+             self._renderer = "Mantra"
+             self._builder = 1
+@@ -94,6 +121,9 @@
+         elif node.type().name() == "octane_vopnet":
+             self._renderer = "Octane"
+             self._builder = 1
++        elif "octane_solaris_material_builder" in node.type().name():
++            self._renderer = "Octane"
++            self._builder = 1
+         elif "mtlxopen_pbr_surface" in node.type().name():
+             self._renderer = "Karma"
+             self._builder = 0
+@@ -110,9 +140,60 @@
+             self._builder = 0
+         return self._renderer
+ 
+-    def import_asset_to_scene(self, mat: material.Material) -> None:
+-        """Import a Material to the Nework Editor/Scene"""
++    # --- Import target capability ------------------------------------------
++    # Node types that CAN live in a LOP/Solaris context (in addition to
++    # Karma/MaterialX, which are recognised by renderer, not by type name).
++    LOP_CAPABLE_NODE_TYPES = (
++        "rs_usd_material_builder",  # Redshift USD material builder
++        "octane_solaris_material_builder",  # Octane Solaris material builder
++    )
+ 
++    def get_saved_node_type(self, mat: material.Material) -> str:
++        """Return the true builder node type recorded in a material's
++        .interface file. asCode() writes a createNode("<type>", ...) call, so
++        the first such type is the builder that was saved. Returns "" if the
++        file is missing or unreadable."""
++        iface = (
++            self._preferences.dir
++            + self._preferences.asset_dir
++            + mat.mat_id
++            + ".interface"
++        )
++        try:
++            with open(iface, "r", encoding="utf-8") as fh:
++                text = fh.read()
++        except OSError:
++            return ""
++        match = re.search(r'createNode\(\s*[\'"]([^\'"]+)[\'"]', text)
++        return match.group(1) if match else ""
++
++    def import_targets(self, mat: material.Material) -> set:
++        """Return the contexts a material can be imported into: a subset of
++        {"mat", "lop"}.
++
++        - Karma/MaterialX mix freely -> both.
++        - Redshift USD builder (and any LOP_CAPABLE_NODE_TYPES) -> both.
++        - Classic redshift_vopnet / octane_vopnet / Arnold / Mantra -> "mat"
++          only; importing them into a LOP context is impossible.
++        """
++        if "Karma" in mat.renderer or "MaterialX" in mat.renderer:
++            return {"mat", "lop"}
++        if self.get_saved_node_type(mat) in self.LOP_CAPABLE_NODE_TYPES:
++            return {"mat", "lop"}
++        return {"mat"}
++
++    def import_asset_to_scene(self, mat: material.Material, target: str = "auto"):
++        """Import a Material to the Network Editor/Scene.
++
++        target: "auto" derives the destination from the active network editor
++        (double-click behaviour); "mat" forces /mat; "lop" forces a LOP
++        materiallibrary. Returns (ok, reason): if the material cannot live in
++        the requested context, ok is False, reason explains why, and nothing
++        is imported."""
++        ok, reason = self.update_context(mat, target)
++        if not ok:
++            return (False, reason)
++
+         parms_file_name = (
+             self._preferences.dir
+             + self._preferences.asset_dir
+@@ -120,34 +201,39 @@
+             + ".interface"
+         )
+ 
+-        self.update_context()
++        self.restore_cop_companion(mat)
+         self._hou_parent = hou.node("/obj").createNode("matnet")
+-        if "MaterialX" or "Karma" in mat.renderer:
+-            self.load_interface_mtlx(parms_file_name, mat)
+-            self.load_items_file(mat)
+-        elif mat.renderer == "Mantra":
+-            self.load_interface_mantra(parms_file_name, mat)
+-            self.load_items_file(mat)
+-        elif "Redshift" in mat.renderer:
+-            self.load_interface_other(parms_file_name, mat, "redshift_vopnet")
+-            self.load_items_file(mat)
+-        elif "Octane" in mat.renderer:
+-            self.load_interface_other(parms_file_name, mat, "octane_vopnet")
+-            self.load_items_file(mat)
+-        elif mat.renderer == "Arnold":
+-            self.load_interface_other(parms_file_name, mat, "arnold_materialbuilder")
+-            self.load_items_file(mat)
++        try:
++            if "MaterialX" in mat.renderer or "Karma" in mat.renderer:
++                self.load_interface_mtlx(parms_file_name, mat)
++                self.load_items_file(mat)
++            elif mat.renderer == "Mantra":
++                self.load_interface_mantra(parms_file_name, mat)
++                self.load_items_file(mat)
++            elif "Redshift" in mat.renderer:
++                self.load_interface_other(parms_file_name, mat, "redshift_vopnet")
++                self.load_items_file(mat, move_builder=True)
++            elif "Octane" in mat.renderer:
++                self.load_interface_other(parms_file_name, mat, "octane_vopnet")
++                self.load_items_file(mat, move_builder=True)
++            elif mat.renderer == "Arnold":
++                self.load_interface_other(parms_file_name, mat, "arnold_materialbuilder")
++                self.load_items_file(mat, move_builder=True)
+ 
+-        # Setup MaterialLibrary if Import Context was such
+-        if self._import_path.type().name() == "materiallibrary":
+-            self._import_path.parm("materials").set(0)
+-            self._import_path.parm("fillmaterials").pressButton()
+-            i = 0
+-            while i < self._import_path.parm("materials").evalAsInt():
+-                self._import_path.parm("".join(["assign", str(i + 1)])).set(0)
+-                i += 1
+-        # Cleanup
+-        self._hou_parent.destroy()
++            # Setup MaterialLibrary if Import Context was such
++            if self._import_path.type().name() == "materiallibrary":
++                self._import_path.parm("materials").set(0)
++                self._import_path.parm("fillmaterials").pressButton()
++                i = 0
++                while i < self._import_path.parm("materials").evalAsInt():
++                    self._import_path.parm("".join(["assign", str(i + 1)])).set(0)
++                    i += 1
++        finally:
++            # Runs even on failure so the temporary staging matnet never
++            # lingers in /obj (same class of leak as the thumbnail
++            # interrupt-safety hardening, applied here to the import path).
++            self._hou_parent.destroy()
++        return (True, "")
+ 
+     def cleanup(self):
+ 
+@@ -159,37 +245,95 @@
+             else:
+                 self._import_path.destroy()
+ 
+-    def update_context(self) -> None:
+-        """
+-        Update the current Houdini Context given on where the user Network Editor is currently
++    def update_context(self, mat: material.Material, target: str = "auto"):
++        """Resolve where a material should import to and set self._import_path.
+ 
+-        :param self: Description
+-        """
++        target:
++          "auto" - derive the destination from the active network editor
++                   (double-click "let MatLib decide" behaviour);
++          "mat"  - force /mat;
++          "lop"  - force a LOP materiallibrary.
++
++        Returns (ok, reason). If the resolved context is LOP and the material
++        cannot live there (classic redshift_vopnet / octane_vopnet / Arnold /
++        Mantra), ok is False and nothing is created; otherwise ok is True and
++        self._import_path is set. /mat and SOP contexts accept every material
++        MatLib handles, so only the LOP case can fail."""
++        allowed = self.import_targets(mat)
++
++        if target == "mat":
++            world = "mat"
++        elif target == "lop":
++            world = "lop"
++        else:  # auto
++            world = self._auto_world()
++
++        if world == "lop" and "lop" not in allowed:
++            return (
++                False,
++                '"'
++                + mat.name
++                + '" is a '
++                + mat.renderer
++                + " VOP material and cannot be imported into a LOP/Solaris "
++                + "context. Use Import to MAT.",
++            )
++
++        if world == "lop":
++            self._set_lop_import_path()
++        elif world == "sop":
++            self._set_sop_import_path()
++        else:  # "mat" (and any fallback)
++            self._import_path = hou.node("/mat")
++            self._use_existing_node = True
++        return (True, "")
++
++    def _auto_world(self) -> str:
++        """Classify the active network editor's context as 'lop', 'sop', or
++        'mat' (the default for anything that holds VOP-style materials)."""
+         curr = self.get_current_network_node()
+-        curr_typename = curr.type().name()
++        if curr is None:
++            return "mat"
++        typename = curr.type().name()
++        try:
++            child_cat = curr.childTypeCategory().name().lower()
++        except Exception:
++            child_cat = ""
++        if (
++            "stage" in typename
++            or "lopnet" in typename
++            or "materiallibrary" in typename
++            or "lop" in child_cat
++        ):
++            return "lop"
++        if "geo" in typename or "sop" in child_cat:
++            return "sop"
++        return "mat"
+ 
+-        if "stage" in curr_typename or "lopnet" in curr_typename:  # Solaris
+-            self._import_path = curr.createNode("materiallibrary")
+-        elif "materiallibrary" in curr_typename:  # Solaris
++    def _set_lop_import_path(self) -> None:
++        """Point the import path at a LOP materiallibrary: reuse the one the
++        editor is inside, else create one under the current stage/lopnet, else
++        create one under /stage (forced LOP from a non-LOP context)."""
++        curr = self.get_current_network_node()
++        if curr is not None and "materiallibrary" in curr.type().name():
+             self._import_path = curr
+             self._use_existing_node = True
+-        elif (
+-            "subnet" in curr_typename
+-        ):  # Inside Subnet - go to stage - there is no clear identifier
+-            if "lop" in curr.parent().childTypeCategory().name().lower():
+-                self._import_path = curr.parent().createNode("materiallibrary")
+-            elif "vop" in curr.parent().childTypeCategory().name().lower():
+-                self._import_path = curr.parent()
+-                self._use_existing_node = True
+-            elif "sop" in curr.parent().childTypeCategory().name().lower():
+-                self._import_path = curr.parent().createNode("matnet")
+-        elif "matnet" in curr_typename or "mat" == curr_typename:  # OldSchool Matnet
+-            self._import_path = curr
+-            self._use_existing_node = True
+-        elif "geo" in curr_typename:
++            return
++        if curr is not None and (
++            "stage" in curr.type().name() or "lopnet" in curr.type().name()
++        ):
++            self._import_path = curr.createNode("materiallibrary")
++            return
++        self._import_path = hou.node("/stage").createNode("materiallibrary")
++
++    def _set_sop_import_path(self) -> None:
++        """Create a matnet inside the current geo/SOP network for the import."""
++        curr = self.get_current_network_node()
++        if curr is not None:
+             self._import_path = curr.createNode("matnet")
+-        else:  # Default to Solaris if antyhing else is current
+-            self._import_path = hou.node("/stage").createNode("materiallibrary")
++        else:
++            self._import_path = hou.node("/mat")
++            self._use_existing_node = True
+ 
+     def load_interface_mtlx(self, parms_file_name, mat: material.Material) -> None:
+         """
+@@ -278,7 +422,11 @@
+             hou_parent = self._hou_parent  # needed for exec
+             exec(code)
+             builder = hou_parent.children()[0]
+-            #    builder = hou.node("obj").createNode("matnet").children()[0]
++            # Delete auto-created default children (newer Redshift builds
++            # create an OpenPBR material + output in a fresh vopnet) so the
++            # saved items don't collide or duplicate on load.
++            for node in builder.children():
++                node.destroy()
+         else:
+             builder = hou.node(self._import_path).createNode(builder_name)
+ 
+@@ -290,9 +438,13 @@
+ 
+         self._builder_node = builder
+ 
+-    def load_items_file(self, mat: material.Material) -> None:
++    def load_items_file(self, mat: material.Material, move_builder: bool = False) -> None:
+         """
+-        Loads the actual Node Configuration from Disk
++        Loads the actual Node Configuration from Disk.
++        move_builder=True moves the rebuilt builder node itself to the import
++        context (Redshift/Octane/Arnold, whose .mat files store the builder's
++        children); False moves the loaded children (MaterialX/Mantra, whose
++        .mat files store the material node itself).
+ 
+         :param self: Description
+         :param mat: Description
+@@ -310,11 +462,219 @@
+             hou.ui.displayMessage("Failure on Import. Please Check Files.")  # type: ignore
+             return None
+ 
+-        new_mat = hou.moveNodesTo(self._builder_node.children(), self._import_path)  # type: ignore
+-        self.builder_node.destroy()
+-        # new_mat[0].moveToGoodPosition()
+-        self._builder_node = new_mat[0]
++        if move_builder:
++            new_mat = hou.moveNodesTo((self._builder_node,), self._import_path)  # type: ignore
++            self._builder_node = new_mat[0]
++            self._builder_node.moveToGoodPosition()
++        else:
++            new_mat = hou.moveNodesTo(self._builder_node.children(), self._import_path)  # type: ignore
++            self.builder_node.destroy()
++            self._builder_node = new_mat[0]
+ 
++    COP_LIB_ROOT = "/obj/MatLib"
++
++    @property
++    def cop_info(self) -> dict:
++        """COP companion info from the last save ({} if none)"""
++        return self._cop_info
++
++    def _sanitize_net_name(self, name: str) -> str:
++        return re.sub(r"[^\w]", "_", name)
++
++    def _find_cop_container(self, cop_node):
++        """Walk up from a COP node to the network node containing it"""
++        n = cop_node
++        while n is not None:
++            try:
++                cat = n.type().category().name().lower()
++            except AttributeError:
++                return None
++            if cat not in ("cop2", "cop"):
++                return n
++            n = n.parent()
++        return None
++
++    def _collect_cop_refs(self, nodes) -> list:
++        """Scan the given nodes (and their descendants) for op: string
++        parms referencing COP nodes. Returns (parm, cop_node, container)."""
++        refs = []
++        scan = []
++        for node in nodes:
++            scan.append(node)
++            scan.extend(node.allSubChildren())
++        for n in scan:
++            for parm in n.parms():
++                try:
++                    raw = parm.unexpandedString()
++                except hou.OperationFailed:
++                    continue
++                if "op:" not in raw:
++                    continue
++                for p in re.findall(r"op:(/[\w/\.\-]+)", raw):
++                    target = hou.node(p)
++                    if target is None:
++                        continue
++                    try:
++                        cat = target.type().category().name().lower()
++                    except AttributeError:
++                        continue
++                    if cat not in ("cop2", "cop"):
++                        continue
++                    container = self._find_cop_container(target)
++                    if container is None:
++                        continue
++                    refs.append((parm, target, container))
++        return refs
++
++    def prepare_cop_companion(self, nodes, asset_id: str, net_name: str) -> dict:
++        """If the material node(s) reference COP networks via op: paths,
++        save those networks as a companion file next to the material and
++        return an {old op: path -> new op: path} rewrite map. Also sets
++        self._cop_info for the library database. Returns {} if the
++        material has no COP references."""
++        self._cop_info = {}
++        refs = self._collect_cop_refs(nodes)
++        if not refs:
++            return {}
++
++        net_name = self._sanitize_net_name(net_name)
++        containers = []
++        for _parm, _target, container in refs:
++            if container not in containers:
++                containers.append(container)
++
++        file_name = (
++            self._preferences.dir
++            + self._preferences.asset_dir
++            + str(asset_id)
++            + "_cop"
++            + self._preferences.ext
++        )
++
++        staging_parent = hou.node("/obj").createNode("subnet")
++        rename_map = {}
++        net_type = containers[0].type().name()
++        try:
++            try:
++                staging = staging_parent.createNode(net_type)
++            except hou.OperationFailed:
++                net_type = "copnet"
++                staging = staging_parent.createNode(net_type)
++            for container in containers:
++                kids = container.children()
++                copies = hou.copyNodesTo(kids, staging)
++                for orig, copy in zip(kids, copies):
++                    rename_map[orig.path()] = copy.name()
++            staging.saveItemsToFile(
++                staging.children(), file_name, save_hda_fallbacks=False
++            )
++        finally:
++            staging_parent.destroy()
++
++        path_map = {}
++        for _parm, target, container in refs:
++            rel = target.path()[len(container.path()) + 1 :]
++            parts = rel.split("/")
++            top_orig = container.path() + "/" + parts[0]
++            parts[0] = rename_map.get(top_orig, parts[0])
++            path_map["op:" + target.path()] = (
++                "op:" + self.COP_LIB_ROOT + "/" + net_name + "/" + "/".join(parts)
++            )
++
++        self._cop_info = {"name": net_name, "type": net_type}
++        print(
++            "egMatLib: saved "
++            + str(len(containers))
++            + " COP network(s) with material -> "
++            + self.COP_LIB_ROOT
++            + "/"
++            + net_name
++        )
++        return path_map
++
++    def rewrite_cop_refs(self, nodes, path_map: dict) -> None:
++        """Rewrite op: references in all string parms of the given nodes.
++        Only ever called on temporary save copies, never on scene nodes."""
++        if not path_map:
++            return
++        keys = sorted(path_map.keys(), key=len, reverse=True)
++        scan = []
++        for node in nodes:
++            scan.append(node)
++            scan.extend(node.allSubChildren())
++        for n in scan:
++            for parm in n.parms():
++                try:
++                    raw = parm.unexpandedString()
++                except hou.OperationFailed:
++                    continue
++                if "op:" not in raw:
++                    continue
++                new = raw
++                for key in keys:
++                    new = new.replace(key, path_map[key])
++                if new != raw:
++                    try:
++                        parm.set(new)
++                    except (hou.OperationFailed, hou.PermissionError):
++                        pass
++
++    def restore_cop_companion(self, mat: material.Material) -> None:
++        """Recreate the material's saved COP network under /obj/MatLib on
++        import. An existing network with the same name is reused."""
++        info = getattr(mat, "cop_net", {}) or {}
++        if not info or not info.get("name"):
++            return
++        file_name = (
++            self._preferences.dir
++            + self._preferences.asset_dir
++            + mat.mat_id
++            + "_cop"
++            + self._preferences.ext
++        )
++        if not os.path.exists(file_name):
++            print(
++                "egMatLib: COP companion file missing for " + mat.name + " - skipped"
++            )
++            return
++        root = hou.node(self.COP_LIB_ROOT)
++        if root is None:
++            root = hou.node("/obj").createNode("subnet")
++            try:
++                root.setName("MatLib")
++            except hou.OperationFailed:
++                print("egMatLib: could not create /obj/MatLib - COP restore skipped")
++                root.destroy()
++                return
++        if root.node(info["name"]) is not None:
++            print(
++                "egMatLib: COP network '"
++                + info["name"]
++                + "' already exists in /obj/MatLib - reusing it"
++            )
++            return
++        try:
++            copnet = root.createNode(info.get("type", "copnet"))
++        except hou.OperationFailed:
++            copnet = root.createNode("copnet")
++        try:
++            copnet.setName(info["name"])
++        except hou.OperationFailed:
++            pass
++        try:
++            copnet.loadItemsFromFile(file_name, ignore_load_warnings=True)
++        except OSError:
++            print("egMatLib: failed to load COP companion for " + mat.name)
++            copnet.destroy()
++            return
++        copnet.moveToGoodPosition()
++        print(
++            "egMatLib: restored COP network -> "
++            + self.COP_LIB_ROOT
++            + "/"
++            + info["name"]
++        )
++
+     def save_node(self, node: hou.Node, asset_id: str, update: bool) -> bool:
+         """Save Node wrapper for different Material Types"""
+         if hou.getenv("OCIO") is None:
+@@ -342,7 +702,7 @@
+                 "Rendering", "Performing Tasks", open_interrupt_dialog=True
+             ):
+                 val = self.save_node_octane(node, asset_id, update)
+-        elif "MaterialX" or "Karma" in self._renderer:
++        elif "MaterialX" in self._renderer or "Karma" in self._renderer:
+             if (
+                 node.type().name() == "collect"
+                 or "mtlxopen_pbr_surface" in node.type().name()
+@@ -380,18 +740,28 @@
+         nodetree = helpers.get_connected_nodes(node)
+ 
+         sub_tmp = nodetree[0].parent().createNode("subnet")
+-        children = sub_tmp.children()
+-        for n in children:
+-            n.destroy()
+-        hou.copyNodesTo((nodetree), sub_tmp)  # type: ignore
+-        children = sub_tmp.children()
++        try:
++            children = sub_tmp.children()
++            for n in children:
++                n.destroy()
++            hou.copyNodesTo((nodetree), sub_tmp)  # type: ignore
++            children = sub_tmp.children()
+ 
+-        interface_file = open(parms_file_name, "w", encoding="utf-8")
+-        interface_file.write(sub_tmp.asCode())
++            path_map = self.prepare_cop_companion(
++                tuple(nodetree), str(asset_id), node.name()
++            )
++            if path_map:
++                self.rewrite_cop_refs((sub_tmp,), path_map)
+ 
+-        sub_tmp.saveItemsToFile(children, file_name, save_hda_fallbacks=False)
+-        sub_tmp.destroy()
++            interface_file = open(parms_file_name, "w", encoding="utf-8")
++            interface_file.write(sub_tmp.asCode())
+ 
++            sub_tmp.saveItemsToFile(children, file_name, save_hda_fallbacks=False)
++        finally:
++            # Runs even on failure so the temporary save copy never
++            # lingers in the scene.
++            sub_tmp.destroy()
++
+         # If this is not a manual update and render_on_import is off, finish here
+         if not update:
+             if not self._preferences.render_on_import:
+@@ -418,14 +788,20 @@
+         )
+ 
+         builder = hou.node("/obj").createNode("matnet")
+-        copied = hou.copyNodesTo((node,), builder)  # type: ignore
++        try:
++            copied = hou.copyNodesTo((node,), builder)  # type: ignore
+ 
+-        interface_file = open(parms_file_name, "w", encoding="utf-8")
+-        interface_file.write(node.asCode())
++            path_map = self.prepare_cop_companion((node,), str(asset_id), node.name())
++            if path_map:
++                self.rewrite_cop_refs((copied[0],), path_map)
+ 
+-        builder.saveItemsToFile(copied, file_name, save_hda_fallbacks=False)
++            interface_file = open(parms_file_name, "w", encoding="utf-8")
++            interface_file.write(node.asCode())
+ 
+-        if builder != "":
++            builder.saveItemsToFile(copied, file_name, save_hda_fallbacks=False)
++        finally:
++            # Runs even on failure so the temporary save copy never
++            # lingers in the scene.
+             builder.destroy()
+ 
+         # If this is not a manual update and render_on_import is off, finish here
+@@ -447,7 +823,7 @@
+         )
+ 
+         orig_node = node
+-        builder = ""
++        builder = None
+         if node.type().name() != "materialbuilder":
+             builder = hou.node("/mat").createNode("materialbuilder")
+             for c in builder.children():
+@@ -455,24 +831,27 @@
+             hou.copyNodesTo((node,), builder)  # type: ignore
+             node = builder
+ 
+-        # interface-stuff
+-        parms_file_name = (
+-            self._preferences.dir
+-            + self._preferences.asset_dir
+-            + str(asset_id)
+-            + ".interface"
+-        )
+-        children = node.children()
++        try:
++            # interface-stuff
++            parms_file_name = (
++                self._preferences.dir
++                + self._preferences.asset_dir
++                + str(asset_id)
++                + ".interface"
++            )
++            children = node.children()
+ 
+-        interface_file = open(parms_file_name, "w", encoding="utf-8")
+-        interface_file.write(node.asCode())
++            interface_file = open(parms_file_name, "w", encoding="utf-8")
++            interface_file.write(node.asCode())
+ 
+-        node.saveItemsToFile(children, file_name, save_hda_fallbacks=False)
++            node.saveItemsToFile(children, file_name, save_hda_fallbacks=False)
++        finally:
++            # Runs even on failure so the temporary save copy never
++            # lingers in the scene.
++            node = orig_node
++            if builder is not None:
++                builder.destroy()
+ 
+-        node = orig_node
+-        if builder != "":
+-            builder.destroy()
+-
+         # If this is not a manual update and render_on_import is off, finish here
+         if not update:
+             if not self._preferences.render_on_import:
+@@ -498,21 +877,46 @@
+             + str(asset_id)
+             + ".interface"
+         )
+-        children = node.children()
++        # COP companion: if the material references COP networks via op:
++        # paths, save them alongside and rewrite the paths on a temporary
++        # copy so the scene material is never touched.
++        path_map = self.prepare_cop_companion((node,), str(asset_id), node.name())
++        tmp_parent = None
++        save_node = node
++        if path_map:
++            tmp_parent = hou.node("/obj").createNode("matnet")
++            save_node = hou.copyNodesTo((node,), tmp_parent)[0]
++            self.rewrite_cop_refs((save_node,), path_map)
+ 
+-        interface_file = open(parms_file_name, "w", encoding="utf-8")
+-        # interface_file.write(node.parmTemplateGroup().asCode())
+-        interface_file.write(node.asCode())
++        try:
++            children = save_node.children()
+ 
+-        node.saveItemsToFile(children, file_name, save_hda_fallbacks=False)
++            interface_file = open(parms_file_name, "w", encoding="utf-8")
++            # interface_file.write(node.parmTemplateGroup().asCode())
++            interface_file.write(save_node.asCode())
+ 
++            save_node.saveItemsToFile(children, file_name, save_hda_fallbacks=False)
++        finally:
++            # Runs even on failure so the temporary COP-rewrite copy never
++            # lingers in the scene.
++            if tmp_parent is not None:
++                tmp_parent.destroy()
++
+         # If this is not a manual update and render_on_import is off, finish here
+         if not update:
+             if not self._preferences.render_on_import:
+                 return True
+ 
+-        thumber = thumbs.ThumbNailRenderer(self._preferences)
+-        return thumber.create_thumb_redshift(node, asset_id)
++        try:
++            thumber = thumbs.ThumbNailRenderer(self._preferences)
++            return thumber.create_thumb_redshift(node, asset_id)
++        except Exception as e:
++            print(
++                "egMatLib: Redshift thumbnail failed ("
++                + str(e)
++                + ") - material saved and registered without thumbnail."
++            )
++            return True
+ 
+     def save_node_octane(self, node: hou.Node, asset_id: str, update: bool) -> bool:
+         """
+@@ -556,8 +960,16 @@
+             if not self._preferences.render_on_import:
+                 return True
+ 
+-        thumber = thumbs.ThumbNailRenderer(self._preferences)
+-        return thumber.create_thumb_octane(node, asset_id)
++        try:
++            thumber = thumbs.ThumbNailRenderer(self._preferences)
++            return thumber.create_thumb_octane(node, asset_id)
++        except Exception as e:
++            print(
++                "egMatLib: Octane thumbnail failed ("
++                + str(e)
++                + ") - material saved and registered without thumbnail."
++            )
++            return True
+ 
+     def save_node_arnold(self, node: hou.Node, asset_id: str, update: bool) -> bool:
+         """Saves the Arnold node to disk - does not add to library"""
+diff -ruN a/scripts/python/matlib/render/shaderball_scene.py b/scripts/python/matlib/render/shaderball_scene.py
+--- a/scripts/python/matlib/render/shaderball_scene.py	2026-07-15 17:28:10
++++ b/scripts/python/matlib/render/shaderball_scene.py	2026-07-15 17:30:53
+@@ -113,15 +113,47 @@
+ 
+             self.mat = self.matnet.createNode("redshift_vopnet")
+ 
++            # Locate the auto-created surface material. The default child
++            # node differs between Redshift versions: older builds create
++            # StandardMaterial1, newer builds create an OpenPBR material.
+             rsmat = self.mat.node("StandardMaterial1")
+-            rsmat.parm("refl_weight").set(0)
++            if rsmat is None:
++                for child in self.mat.children():
++                    tname = child.type().name()
++                    if tname == "redshift_material":
++                        continue
++                    if "Material" in tname or "PBR" in tname:
++                        rsmat = child
++                        break
++            if rsmat is None:
++                rsmat = self.mat.createNode("redshift::StandardMaterial")
++                out = None
++                for child in self.mat.children():
++                    if child.type().name() == "redshift_material":
++                        out = child
++                        break
++                if out is not None:
++                    out.setInput(0, rsmat, 0)
+ 
++            # Kill specular on the floor. Parameter names differ:
++            # StandardMaterial uses refl_weight, OpenPBR uses specular_weight.
++            for parm_name in ("refl_weight", "specular_weight"):
++                parm = rsmat.parm(parm_name)
++                if parm is not None:
++                    parm.set(0)
++                    break
++
+             tex = self.mat.createNode("redshift::TextureSampler")
+             tex.parm("tex0").set(
+                 "$EGMATLIB//scripts/python/matlib/res/img/FloorTexture.exr"
+             )
+ 
+-            rsmat.setInput(0, tex, 0)
++            # Prefer the named input so this works on both material types;
++            # input index 0 is only guaranteed on StandardMaterial.
++            try:
++                rsmat.setNamedInput("base_color", tex, 0)
++            except (hou.OperationFailed, AttributeError):
++                rsmat.setInput(0, tex, 0)
+ 
+             self.mat.setName("Plane", True)
+ 
+@@ -147,15 +179,35 @@
+ 
+             self.mat = self.matnet.createNode("octane_vopnet")
+ 
++            # Locate the auto-created surface material. As with Redshift
++            # above, the default child's name can differ between Octane
++            # versions - search generically instead of assuming
++            # "Standard_Surface" and crashing when it isn't there.
+             omat = self.mat.node("Standard_Surface")
+-            omat.parm("specular").set(0)
++            if omat is None:
++                for child in self.mat.children():
++                    tname = child.type().name()
++                    if "Surface" in tname or "Material" in tname:
++                        omat = child
++                        break
+ 
+-            tex = self.mat.createNode("octane::NT_TEX_IMAGE")
+-            tex.parm("A_FILENAME").set(
+-                "$EGMATLIB/scripts/python/matlib/res/img/FloorTexture.exr"
+-            )
++            if omat is not None:
++                specular = omat.parm("specular")
++                if specular is not None:
++                    specular.set(0)
+ 
+-            omat.setInput(1, tex, 0)
++                tex = self.mat.createNode("octane::NT_TEX_IMAGE")
++                tex.parm("A_FILENAME").set(
++                    "$EGMATLIB/scripts/python/matlib/res/img/FloorTexture.exr"
++                )
++                omat.setInput(1, tex, 0)
++            else:
++                print(
++                    "egMatLib: could not find the default Octane material "
++                    "node on a fresh octane_vopnet - floor texture/specular "
++                    "skipped (renderer version difference)."
++                )
++
+             self.mat.setName("Plane", True)
+ 
+     def get_geo_node(self) -> hou.Node:
+diff -ruN a/scripts/python/matlib/render/thumbnail_scene.py b/scripts/python/matlib/render/thumbnail_scene.py
+--- a/scripts/python/matlib/render/thumbnail_scene.py	2026-07-15 17:28:10
++++ b/scripts/python/matlib/render/thumbnail_scene.py	2026-07-15 17:30:53
+@@ -9,6 +9,28 @@
+ importlib.reload(shaderball_scene)
+ 
+ 
++def safe_set(node: hou.Node, parm_name: str, value, **kwargs) -> None:
++    """Set a parm if it exists; skip silently if the renderer
++    version does not expose it (parameter names change between
++    Redshift releases)."""
++    parm = node.parm(parm_name)
++    if parm is None:
++        print(
++            "egMatLib: parameter '"
++            + parm_name
++            + "' not found on "
++            + node.path()
++            + " - skipping (renderer version difference)."
++        )
++        return
++    try:
++        parm.set(value, **kwargs)
++    except (hou.OperationFailed, TypeError) as e:
++        print(
++            "egMatLib: could not set '" + parm_name + "': " + str(e)
++        )
++
++
+ class ThumbNailScene:
+     """
+     Generates a Thumbnail Scene and allows for Rendering Material Preview
+@@ -21,7 +43,13 @@
+ 
+         viewer = hou.ui.curDesktop().paneTabOfType(hou.paneTabType.SceneViewer)
+         if not viewer:
+-            return False
++            # __init__ can only return None, so a bare "return False" here
++            # (the old behaviour) raised a TypeError instead of failing
++            # gracefully. Raise a clear error so callers can report it.
++            raise RuntimeError(
++                "egMatLib: no Scene Viewer pane is open - cannot build a "
++                "thumbnail scene. Open a Scene Viewer and try again."
++            )
+ 
+         self.display = viewer.getOCIODisplay()
+         self.view = viewer.getOCIOView()
+@@ -161,9 +189,9 @@
+             self.lgt_right = self.geo_node.createNode("hlight::2.0")
+             self.lgt_right.setName("Right")
+             self.lgt_env = self.geo_node.createNode("envlight")
+-            self.lgt_right.setName("Env")
++            self.lgt_env.setName("Env")
+             self.lgt_left = self.geo_node.createNode("hlight::2.0")
+-            self.lgt_right.setName("Left")
++            self.lgt_left.setName("Left")
+ 
+             # Right
+             self.lgt_right.parm("tx").set(0.182989)
+@@ -200,9 +228,9 @@
+             self.lgt_right = self.geo_node.createNode("rslight")
+             self.lgt_right.setName("Right")
+             self.lgt_env = self.geo_node.createNode("rslightdome::2.0")
+-            self.lgt_right.setName("Env")
++            self.lgt_env.setName("Env")
+             self.lgt_left = self.geo_node.createNode("rslight")
+-            self.lgt_right.setName("Left")
++            self.lgt_left.setName("Left")
+ 
+             # Right
+             self.lgt_right.parm("tx").set(0.182989)
+@@ -250,9 +278,9 @@
+             self.lgt_right = self.geo_node.createNode("arnold_light")
+             self.lgt_right.setName("Right")
+             self.lgt_env = self.geo_node.createNode("arnold_light")
+-            self.lgt_right.setName("Env")
++            self.lgt_env.setName("Env")
+             self.lgt_left = self.geo_node.createNode("arnold_light")
+-            self.lgt_right.setName("Left")
++            self.lgt_left.setName("Left")
+ 
+             # Right
+             self.lgt_right.parm("tx").set(0.182989)
+@@ -298,7 +326,7 @@
+             self.lgt_right = self.geo_node.createNode("octane_light")
+             self.lgt_right.setName("Right")
+             self.lgt_left = self.geo_node.createNode("octane_light")
+-            self.lgt_right.setName("Left")
++            self.lgt_left.setName("Left")
+ 
+             # Octane Version Madness!
+             if self.lgt_right.parm("blackbody_efficiency_color_A_VALUEr"):
+@@ -434,7 +462,13 @@
+ 
+         if "Redshift" in self.renderer:
+             self.cam.setSelected(True, True)
+-            hou.hscript("Redshift_cameraSpareParameters -C 1")
++            try:
++                hou.hscript("Redshift_cameraSpareParameters -C 1")
++            except hou.OperationFailed as e:
++                print(
++                    "egMatLib: Redshift_cameraSpareParameters unavailable - skipping: "
++                    + str(e)
++                )
+             self.geo_node.setSelected(True, True)
+ 
+     def build_rops(self) -> None:
+@@ -484,23 +518,25 @@
+ 
+         elif "Redshift" in self.renderer:
+             self.rop = self.ropnet.createNode("Redshift_ROP")
+-            self.rop.parm("RS_renderCamera").set("../../RenderCam")
+-            self.rop.parm("RS_OCIOColorCorrection").set(1)
+-            self.rop.parm("RS_addDefaultLight").set(1)
+-            self.rop.parm("RS_outputFileFormat").set(3)
+-            self.rop.parm("RS_renderToMPlay").set(0)
+-            self.rop.parm("RS_nonBlockingRendering").set(0)
++            safe_set(self.rop, "RS_renderCamera", "../../RenderCam")
++            safe_set(self.rop, "RS_OCIOColorCorrection", 1)
++            safe_set(self.rop, "RS_addDefaultLight", 1)
++            safe_set(self.rop, "RS_outputFileFormat", 3)
++            safe_set(self.rop, "RS_renderToMPlay", 0)
++            safe_set(self.rop, "RS_nonBlockingRendering", 0)
+ 
+-            self.rop.parm("RS_PFX_MPL_exposure").set(0)
+-            self.rop.parm("RS_PFX_MPL_effects").set(0)
+-            self.rop.parm("RS_PFX_HDR_exposure").set(0)
+-            self.rop.parm("RS_PFX_MPL_effects").set(0)
+-            self.rop.parm("RS_PFX_LDR_exposure").set(0)
++            safe_set(self.rop, "RS_PFX_MPL_exposure", 0)
++            safe_set(self.rop, "RS_PFX_MPL_effects", 0)
++            safe_set(self.rop, "RS_PFX_HDR_exposure", 0)
++            safe_set(self.rop, "RS_PFX_LDR_exposure", 0)
+ 
+-            self.rop.parm("RS_objects_exclude").set(self.geo_node.parm("obj_exclude"))
+-            self.rop.parm("RS_lights_candidate").set(self.geo_node.parm("lights"))
+-            self.rop.parm("RS_outputFileNamePrefix").set(
+-                self.geo_node.parm("path"), follow_parm_reference=False
++            safe_set(self.rop, "RS_objects_exclude", self.geo_node.parm("obj_exclude"))
++            safe_set(self.rop, "RS_lights_candidate", self.geo_node.parm("lights"))
++            safe_set(
++                self.rop,
++                "RS_outputFileNamePrefix",
++                self.geo_node.parm("path"),
++                follow_parm_reference=False,
+             )
+ 
+         if "Arnold" in self.renderer:
+@@ -545,28 +581,35 @@
+             # RopNet Setup
+             self.rop = self.ropnet.createNode("Octane_ROP")
+ 
+-            self.rop.parm("HO_renderCamera").set("../../RenderCam")
+-            # self.rop.parm("HO_iprCamera").set("../../RenderCam")
+-            self.rop.parm("HO_renderTarget").set("../../matnet1/Octane_RenderTarget")
++            # Guarded like the Redshift ROP above: parm names on Octane_ROP
++            # have already been observed to shift between versions (see the
++            # "Octane Version Madness!" light setup), so a rename here
++            # should degrade gracefully instead of crashing the render.
++            safe_set(self.rop, "HO_renderCamera", "../../RenderCam")
++            # safe_set(self.rop, "HO_iprCamera", "../../RenderCam")
++            safe_set(self.rop, "HO_renderTarget", "../../matnet1/Octane_RenderTarget")
+ 
+-            self.rop.parm("HO_renderToMPlay").set(0)
++            safe_set(self.rop, "HO_renderToMPlay", 0)
+ 
+-            self.rop.parm("HO_img_colorSpace").set(5)
+-            self.rop.parm("HO_img_ocioColorSpace").set(114)
++            safe_set(self.rop, "HO_img_colorSpace", 5)
++            safe_set(self.rop, "HO_img_ocioColorSpace", 114)
+ 
+-            self.rop.parm("HO_img_fileFormat").set(0)
++            safe_set(self.rop, "HO_img_fileFormat", 0)
+ 
+-            self.rop.parm("HO_mbDeformations").set(0)
+-            self.rop.parm("HO_mbFur").set(0)
+-            self.rop.parm("HO_mbInstances").set(0)
+-            self.rop.parm("HO_mbParticles").set(0)
++            safe_set(self.rop, "HO_mbDeformations", 0)
++            safe_set(self.rop, "HO_mbFur", 0)
++            safe_set(self.rop, "HO_mbInstances", 0)
++            safe_set(self.rop, "HO_mbParticles", 0)
+ 
+-            self.rop.parm("HO_img_deepFile").set("deep filename")
++            safe_set(self.rop, "HO_img_deepFile", "deep filename")
+ 
+-            self.rop.parm("HO_objects_exclude").set(self.geo_node.parm("obj_exclude"))
++            safe_set(self.rop, "HO_objects_exclude", self.geo_node.parm("obj_exclude"))
+ 
+-            self.rop.parm("HO_img_fileName").set(
+-                self.geo_node.parm("path"), follow_parm_reference=False
++            safe_set(
++                self.rop,
++                "HO_img_fileName",
++                self.geo_node.parm("path"),
++                follow_parm_reference=False,
+             )
+ 
+     def build_cops(self) -> None:
+diff -ruN a/scripts/python/matlib/render/thumbs.py b/scripts/python/matlib/render/thumbs.py
+--- a/scripts/python/matlib/render/thumbs.py	2026-07-15 17:28:10
++++ b/scripts/python/matlib/render/thumbs.py	2026-07-15 17:30:53
+@@ -26,23 +26,27 @@
+         if self._mat:
+             node_handler.import_asset_to_scene(self._mat)
+ 
+-        with hou.InterruptableOperation(
+-            "Rendering", "Performing Tasks", open_interrupt_dialog=True
+-        ):
+-            if self._mat.renderer == "MaterialX" or self._mat.renderer == "Karma":
+-                self.create_thumb_mtlx(node_handler.builder_node, self._mat.mat_id)
+-            elif self._mat.renderer == "Mantra":
+-                self.create_thumb_mantra(node_handler.builder_node, self._mat.mat_id)
+-            elif self._mat.renderer == "Redshift":
+-                self.create_thumb_redshift(node_handler.builder_node, self._mat.mat_id)
+-            elif self._mat.renderer == "Octane":
+-                self.create_thumb_octane(node_handler.builder_node, self._mat.mat_id)
+-            elif self._mat.renderer == "Arnold":
+-                self.create_thumb_arnold(node_handler.builder_node, self._mat.mat_id)
++        try:
++            with hou.InterruptableOperation(
++                "Rendering", "Performing Tasks", open_interrupt_dialog=True
++            ):
++                if self._mat.renderer == "MaterialX" or self._mat.renderer == "Karma":
++                    self.create_thumb_mtlx(node_handler.builder_node, self._mat.mat_id)
++                elif self._mat.renderer == "Mantra":
++                    self.create_thumb_mantra(node_handler.builder_node, self._mat.mat_id)
++                elif self._mat.renderer == "Redshift":
++                    self.create_thumb_redshift(node_handler.builder_node, self._mat.mat_id)
++                elif self._mat.renderer == "Octane":
++                    self.create_thumb_octane(node_handler.builder_node, self._mat.mat_id)
++                elif self._mat.renderer == "Arnold":
++                    self.create_thumb_arnold(node_handler.builder_node, self._mat.mat_id)
+ 
+-            else:
+-                pass
+-        node_handler.cleanup()
++                else:
++                    pass
++        finally:
++            # Runs even if the user interrupts the render (ESC) so the
++            # imported material copy never lingers in /mat.
++            node_handler.cleanup()
+ 
+     def create_thumb_mtlx(self, node: hou.Node, asset_id: str) -> bool:
+         # Build path
+@@ -69,152 +73,155 @@
+         # Create Thumbnail
+         net = hou.node("/obj").createNode("lopnet")
+ 
+-        ref = net.createNode("reference::2.0")
+-        if self._preferences.ballmode:
+-            ref.parm("filepath1").set(
+-                hou.getenv("EGMATLIB")
+-                + "/scripts/python/matlib/res/usd/shaderBallScene2.usd"
+-            )
+-        else:
+-            ref.parm("filepath1").set(
+-                hou.getenv("EGMATLIB")
+-                + "/scripts/python/matlib/res/usd/shaderBallScene2_Simple.usd"
+-            )
++        try:
++            ref = net.createNode("reference::2.0")
++            if self._preferences.ballmode:
++                ref.parm("filepath1").set(
++                    hou.getenv("EGMATLIB")
++                    + "/scripts/python/matlib/res/usd/shaderBallScene2.usd"
++                )
++            else:
++                ref.parm("filepath1").set(
++                    hou.getenv("EGMATLIB")
++                    + "/scripts/python/matlib/res/usd/shaderBallScene2_Simple.usd"
++                )
+ 
+-        ref.parm("primpath1").set("/shaderBallScene")
+-        lib1 = net.createNode("materiallibrary")
+-        lib1.setFirstInput(ref)
+-        surf = lib1.createNode("mtlxstandard_surface")
+-        tex = lib1.createNode("mtlxtiledimage")
+-        tex.parm("file").set("color3")
+-        tex.parm("file").set("$EGMATLIB/scripts/python/matlib/res/img/FloorTexture.rat")
+-        surf.setInput(1, tex, 0)
+-        surf.setGenericFlag(hou.nodeFlag.Material, True)
+-        lib1.parm("materials").set(1)
+-        lib1.parm("matnode1").set("mtlxstandard_surface1")
+-        lib1.parm("matpath1").set("/thumb/bg_material")
+-        lib1.parm("geopath1").set("/shaderBallScene/geo/plane/mesh_0")
+-        lib1.parm("assign1").set(1)
++            ref.parm("primpath1").set("/shaderBallScene")
++            lib1 = net.createNode("materiallibrary")
++            lib1.setFirstInput(ref)
++            surf = lib1.createNode("mtlxstandard_surface")
++            tex = lib1.createNode("mtlxtiledimage")
++            tex.parm("file").set("color3")
++            tex.parm("file").set("$EGMATLIB/scripts/python/matlib/res/img/FloorTexture.rat")
++            surf.setInput(1, tex, 0)
++            surf.setGenericFlag(hou.nodeFlag.Material, True)
++            lib1.parm("materials").set(1)
++            lib1.parm("matnode1").set("mtlxstandard_surface1")
++            lib1.parm("matpath1").set("/thumb/bg_material")
++            lib1.parm("geopath1").set("/shaderBallScene/geo/plane/mesh_0")
++            lib1.parm("assign1").set(1)
+ 
+-        lib = net.createNode("materiallibrary")
+-        lib.setFirstInput(lib1)
++            lib = net.createNode("materiallibrary")
++            lib.setFirstInput(lib1)
+ 
+-        curr_items = node
+-        # print(curr_items)  # TODO: Fails if is list
+-        if not isinstance(node, list):
+-            if curr_items.type().name() == "subnet":
+-                curr_items = (node,)
+-            elif "mtlxopen_pbr_surface" in curr_items.type().name():
+-                curr_items = (node,)
+-            else:
+-                curr_items = node.children()
++            curr_items = node
++            # print(curr_items)  # TODO: Fails if is list
++            if not isinstance(node, list):
++                if curr_items.type().name() == "subnet":
++                    curr_items = (node,)
++                elif "mtlxopen_pbr_surface" in curr_items.type().name():
++                    curr_items = (node,)
++                else:
++                    curr_items = node.children()
+ 
+-        curr_nodes = hou.copyNodesTo(curr_items, lib)  # type: ignore
+-        curr_nodes[0].setSelected(True)
++            curr_nodes = hou.copyNodesTo(curr_items, lib)  # type: ignore
++            curr_nodes[0].setSelected(True)
+ 
+-        collect = 0
+-        for n in curr_nodes:
+-            if n.type().name() == "collect":
+-                n.setGenericFlag(hou.nodeFlag.Material, True)
+-                collect = 1
+-            for p in n.parms():
+-                if "_activate_" in p.name():
+-                    p.set(1)
+-                if "opacity" in p.name():
+-                    if p.eval() < 0.01:
+-                        p.set(1)
+-
+-        if not collect:
++            collect = 0
+             for n in curr_nodes:
+-                if n.type().name() == "mtlxstandard_surface":
++                if n.type().name() == "collect":
+                     n.setGenericFlag(hou.nodeFlag.Material, True)
+-                    break
+-                elif "subnet" in n.type().name():
+-                    n.setGenericFlag(hou.nodeFlag.Material, True)
+-                    break
++                    collect = 1
++                for p in n.parms():
++                    if "_activate_" in p.name():
++                        p.set(1)
++                    if "opacity" in p.name():
++                        if p.eval() < 0.01:
++                            p.set(1)
+ 
+-        lib.parm("fillmaterials").pressButton()
+-        lib.parm("assign1").set(1)
+-        lib.parm("geopath1").set("/shaderBallScene/geo/ball")
++            if not collect:
++                for n in curr_nodes:
++                    if n.type().name() == "mtlxstandard_surface":
++                        n.setGenericFlag(hou.nodeFlag.Material, True)
++                        break
++                    elif "subnet" in n.type().name():
++                        n.setGenericFlag(hou.nodeFlag.Material, True)
++                        break
+ 
+-        preferences = net.createNode("karmarenderproperties")
+-        preferences.parm("camera").set("/shaderBallScene/cameras/RenderCam")
+-        preferences.parm("res_mode").set("manual")
+-        preferences.parm("res_mode").pressButton()
+-        preferences.parm("resolutionx").set(self._preferences.rendersize)
+-        preferences.parm("resolutiony").deleteAllKeyframes()
+-        preferences.parm("resolutiony").set(self._preferences.rendersize)
+-        preferences.parm("engine").set("xpu")
+-        preferences.parm("engine").pressButton()
+-        preferences.parm("pathtracedsamples").set(self._preferences.rendersamples)
+-        preferences.parm("enabledof").set(0)
+-        preferences.parm("enablemblur").set(0)
+-        preferences.parm("picture").set(path)
+-        preferences.setFirstInput(lib)
++            lib.parm("fillmaterials").pressButton()
++            lib.parm("assign1").set(1)
++            lib.parm("geopath1").set("/shaderBallScene/geo/ball")
+ 
+-        rop = net.createNode("usdrender_rop")
+-        rop.parm("renderer").set("BRAY_HdKarmaXPU")  # KarmaXPU
+-        rop.setFirstInput(preferences)
+-        rop.parm("soho_foreground").set(1)
+-        rop.parm("execute").pressButton()
++            preferences = net.createNode("karmarenderproperties")
++            preferences.parm("camera").set("/shaderBallScene/cameras/RenderCam")
++            preferences.parm("res_mode").set("manual")
++            preferences.parm("res_mode").pressButton()
++            preferences.parm("resolutionx").set(self._preferences.rendersize)
++            preferences.parm("resolutiony").deleteAllKeyframes()
++            preferences.parm("resolutiony").set(self._preferences.rendersize)
++            preferences.parm("engine").set("xpu")
++            preferences.parm("engine").pressButton()
++            preferences.parm("pathtracedsamples").set(self._preferences.rendersamples)
++            preferences.parm("enabledof").set(0)
++            preferences.parm("enablemblur").set(0)
++            preferences.parm("picture").set(path)
++            preferences.setFirstInput(lib)
+ 
+-        if hou.applicationVersion()[0] > 20:
+-            # Copnet Setup
+-            copnet = rop.parent().createNode("copnet")
+-            copnet.setName("exr_to_png")
++            rop = net.createNode("usdrender_rop")
++            rop.parm("renderer").set("BRAY_HdKarmaXPU")  # KarmaXPU
++            rop.setFirstInput(preferences)
++            rop.parm("soho_foreground").set(1)
++            rop.parm("execute").pressButton()
+ 
+-            cop_file = copnet.createNode("file")
++            if hou.applicationVersion()[0] > 20:
++                # Copnet Setup
++                copnet = rop.parent().createNode("copnet")
++                copnet.setName("exr_to_png")
+ 
+-            cop_file.parm("filename").set(path)
+-            cop_file.parm("aovs").set(1)
+-            cop_file.parm("aov1").set("C")
+-            cop_out = copnet.createNode("rop_image")
+-            cop_out.parm("trange").set(0)
++                cop_file = copnet.createNode("file")
+ 
+-            cop_out.setInput(0, cop_file)
+-            cop_out.parm("colorconversion").set(1)  # Set to Bake OpenColorIO
+-            cop_out.parm("ociodisplay").set(display)
+-            cop_out.parm("ocioview").set(view)
++                cop_file.parm("filename").set(path)
++                cop_file.parm("aovs").set(1)
++                cop_file.parm("aov1").set("C")
++                cop_out = copnet.createNode("rop_image")
++                cop_out.parm("trange").set(0)
+ 
+-            newpath = (
+-                self._preferences.dir
+-                + self._preferences.img_dir
+-                + str(asset_id)
+-                + self._preferences.img_ext
+-            )
++                cop_out.setInput(0, cop_file)
++                cop_out.parm("colorconversion").set(1)  # Set to Bake OpenColorIO
++                cop_out.parm("ociodisplay").set(display)
++                cop_out.parm("ocioview").set(view)
+ 
+-            cop_out.parm("copoutput").set(newpath)
+-            cop_out.parm("execute").pressButton()
++                newpath = (
++                    self._preferences.dir
++                    + self._preferences.img_dir
++                    + str(asset_id)
++                    + self._preferences.img_ext
++                )
+ 
+-        else:  # Use Old COPs with restricted OCIO Capabilities
+-            # Copnet Setup
+-            copnet = rop.parent().createNode("cop2net")
+-            copnet.setName("exr_to_png")
++                cop_out.parm("copoutput").set(newpath)
++                cop_out.parm("execute").pressButton()
+ 
+-            cop_file = copnet.createNode("file")
+-            cop_file.parm("nodename").set(0)
+-            cop_file.parm("filename1").set(path)
+-            cop_file.parm("colorspace").set(3)  # Set to OpenColorIO
+-            cop_file.parm("ocio_space").set(space)
+-            cop_out = copnet.createNode("rop_comp")
+-            cop_out.parm("trange").set(0)
++            else:  # Use Old COPs with restricted OCIO Capabilities
++                # Copnet Setup
++                copnet = rop.parent().createNode("cop2net")
++                copnet.setName("exr_to_png")
+ 
+-            cop_out.setInput(0, cop_file)
+-            cop_out.parm("convertcolorspace").set(3)
+-            cop_out.parm("ocio_display").set(display)
+-            cop_out.parm("ocio_view").set(view)
++                cop_file = copnet.createNode("file")
++                cop_file.parm("nodename").set(0)
++                cop_file.parm("filename1").set(path)
++                cop_file.parm("colorspace").set(3)  # Set to OpenColorIO
++                cop_file.parm("ocio_space").set(space)
++                cop_out = copnet.createNode("rop_comp")
++                cop_out.parm("trange").set(0)
+ 
+-            newpath = (
+-                self._preferences.dir
+-                + self._preferences.img_dir
+-                + str(asset_id)
+-                + self._preferences.img_ext
+-            )
++                cop_out.setInput(0, cop_file)
++                cop_out.parm("convertcolorspace").set(3)
++                cop_out.parm("ocio_display").set(display)
++                cop_out.parm("ocio_view").set(view)
+ 
+-            cop_out.parm("copoutput").set(newpath)
+-            cop_out.parm("execute").pressButton()
++                newpath = (
++                    self._preferences.dir
++                    + self._preferences.img_dir
++                    + str(asset_id)
++                    + self._preferences.img_ext
++                )
+ 
+-        net.destroy()
++                cop_out.parm("copoutput").set(newpath)
++                cop_out.parm("execute").pressButton()
++        finally:
++            # Runs even if the render is interrupted so no orphaned
++            # lopnet (with live ROP) stays in /obj.
++            net.destroy()
+ 
+         if os.path.exists(path):
+             os.remove(path)
+@@ -231,21 +238,24 @@
+         # Build path
+         path = self._preferences.dir + self._preferences.img_dir + str(asset_id)
+ 
+-        #  Set Renderpreferences and Object Exclusions for Thumbnail Rendering
+-        thumb.parm("path").set(path + ".exr")
++        try:
++            #  Set Renderpreferences and Object Exclusions for Thumbnail Rendering
++            thumb.parm("path").set(path + ".exr")
+ 
+-        thumb.parm("cop_out_img").set(path + self._preferences.img_ext)
+-        exclude = "* ^" + thumb.name()
+-        thumb.parm("obj_exclude").set(exclude)
+-        lights = thumb.name() + "/*"
+-        thumb.parm("lights").set(lights)
+-        thumb.parm("resx").set(self._preferences.rendersize)
+-        thumb.parm("resy").set(self._preferences.rendersize)
++            thumb.parm("cop_out_img").set(path + self._preferences.img_ext)
++            exclude = "* ^" + thumb.name()
++            thumb.parm("obj_exclude").set(exclude)
++            lights = thumb.name() + "/*"
++            thumb.parm("lights").set(lights)
++            thumb.parm("resx").set(self._preferences.rendersize)
++            thumb.parm("resy").set(self._preferences.rendersize)
+ 
+-        # Render Frame
+-        thumb.parm("render").pressButton()
+-        # CleanUp
+-        thumb.destroy()
++            # Render Frame
++            thumb.parm("render").pressButton()
++        finally:
++            # CleanUp - runs even if the render is interrupted so no
++            # orphaned thumbnail scene (with live ROP) stays in /obj.
++            thumb.destroy()
+         if os.path.exists(path + ".exr"):
+             os.remove(path + ".exr")
+         return True
+@@ -255,36 +265,38 @@
+         # Create Thumbnail
+         sc = thumbnail_scene.ThumbNailScene("Redshift", self._preferences.ballmode)
+         thumb = sc.get_node()
+-        thumb.parm("mat").set(node.path())
++        try:
++            thumb.parm("mat").set(node.path())
+ 
+-        # Build path
+-        path = (
+-            self._preferences.dir
+-            + self._preferences.img_dir
+-            + str(asset_id)
+-            + self._preferences.img_ext
+-        )
++            # Build path
++            path = (
++                self._preferences.dir
++                + self._preferences.img_dir
++                + str(asset_id)
++                + self._preferences.img_ext
++            )
+ 
+-        #  Set Rendersettings and Object Exclusions for Thumbnail Rendering
+-        thumb.parm("path").set(path)
+-        exclude = "* ^" + thumb.name()
+-        thumb.parm("obj_exclude").set(exclude)
+-        lights = thumb.name() + "/*"
+-        thumb.parm("lights").set(lights)
+-        thumb.parm("resx").set(self._preferences.rendersize)
+-        thumb.parm("resy").set(self._preferences.rendersize)
++            #  Set Rendersettings and Object Exclusions for Thumbnail Rendering
++            thumb.parm("path").set(path)
++            exclude = "* ^" + thumb.name()
++            thumb.parm("obj_exclude").set(exclude)
++            lights = thumb.name() + "/*"
++            thumb.parm("lights").set(lights)
++            thumb.parm("resx").set(self._preferences.rendersize)
++            thumb.parm("resy").set(self._preferences.rendersize)
+ 
+-        # Render Frame
+-        thumb.parm("render").pressButton()
+-        # CleanUp
+-        thumb.destroy()
++            # Render Frame
++            thumb.parm("render").pressButton()
++        finally:
++            # CleanUp - runs even if the render is interrupted so no
++            # orphaned thumbnail scene (with live ROP) stays in /obj.
++            thumb.destroy()
+         return True
+ 
+     def create_thumb_octane(self, node: hou.Node, asset_id: str) -> bool:
+         # Create Thumbnail
+         sc = thumbnail_scene.ThumbNailScene("Octane", self._preferences.ballmode)
+         thumb = sc.get_node()
+-        thumb.parm("mat").set(node.path())
+         # Build path
+         path = (
+             self._preferences.dir
+@@ -293,54 +305,63 @@
+             + self._preferences.img_ext
+         )
+ 
+-        # Set Rendersettings and Object Exclusions for Thumbnail Rendering
+-        thumb.parm("path").set(path)
+-        exclude = "* ^" + thumb.name()
+-        thumb.parm("obj_exclude").set(exclude)
+-        lights = thumb.name() + "/*"
+-        thumb.parm("lights").set(lights)
+-        thumb.parm("resx").set(self._preferences.rendersize)
+-        thumb.parm("resy").set(self._preferences.rendersize)
++        try:
++            thumb.parm("mat").set(node.path())
+ 
+-        # Render Frame
+-        thumb.parm("render").pressButton()
++            # Set Rendersettings and Object Exclusions for Thumbnail Rendering
++            thumb.parm("path").set(path)
++            exclude = "* ^" + thumb.name()
++            thumb.parm("obj_exclude").set(exclude)
++            lights = thumb.name() + "/*"
++            thumb.parm("lights").set(lights)
++            thumb.parm("resx").set(self._preferences.rendersize)
++            thumb.parm("resy").set(self._preferences.rendersize)
+ 
+-        # CleanUp
+-        thumb.destroy()
++            # Render Frame
++            thumb.parm("render").pressButton()
++        finally:
++            # CleanUp - runs even if the render is interrupted so no
++            # orphaned thumbnail scene (with live ROP) stays in /obj.
++            thumb.destroy()
+         return True
+ 
+     def create_thumb_arnold(self, node: hou.Node, asset_id: str) -> bool:
+         # Create Thumbnail
+         sc = thumbnail_scene.ThumbNailScene("Arnold", self._preferences.ballmode)
+         thumb = sc.get_node()
+-        thumb.parm("mat").set(node.path())
+ 
+         # Build path
+         path = self._preferences.dir + self._preferences.img_dir + str(asset_id)
+ 
+-        #  Set Rendersettings and Object Exclusions for Thumbnail Rendering
+-        thumb.parm("path").set(path + ".exr")
+-        thumb.parm("cop_out_img").set(path + self._preferences.img_ext)
++        try:
++            thumb.parm("mat").set(node.path())
+ 
+-        exclude = "* ^" + thumb.name()
+-        thumb.parm("obj_exclude").set(exclude)
+-        lights = thumb.name() + "/*"
+-        thumb.parm("lights").set(lights)
+-        thumb.parm("resx").set(self._preferences.rendersize)
+-        thumb.parm("resy").set(self._preferences.rendersize)
+-        thumb.parm("render").pressButton()
++            #  Set Rendersettings and Object Exclusions for Thumbnail Rendering
++            thumb.parm("path").set(path + ".exr")
++            thumb.parm("cop_out_img").set(path + self._preferences.img_ext)
+ 
+-        # WaitForRender - A really bad hack
+-        done_path = hou.getenv("EGMATLIB") + "/lib/done.txt"
+-        mustend = time.time() + 60.0
+-        while time.time() < mustend:
+-            if os.path.exists(done_path):
+-                os.remove(done_path)
+-                time.sleep(2)
+-                break
+-            time.sleep(1)
++            exclude = "* ^" + thumb.name()
++            thumb.parm("obj_exclude").set(exclude)
++            lights = thumb.name() + "/*"
++            thumb.parm("lights").set(lights)
++            thumb.parm("resx").set(self._preferences.rendersize)
++            thumb.parm("resy").set(self._preferences.rendersize)
++            thumb.parm("render").pressButton()
+ 
+-        thumb.destroy()
++            # WaitForRender - A really bad hack
++            done_path = hou.getenv("EGMATLIB") + "/lib/done.txt"
++            mustend = time.time() + 60.0
++            while time.time() < mustend:
++                if os.path.exists(done_path):
++                    os.remove(done_path)
++                    time.sleep(2)
++                    break
++                time.sleep(1)
++        finally:
++            # CleanUp - runs even if the render is interrupted so no
++            # orphaned thumbnail scene (with live ROP) stays in /obj.
++            thumb.destroy()
++
+         if os.path.exists(path + ".exr"):
+             os.remove(path + ".exr")
+ 
+diff -ruN a/scripts/python/matlib/ui/grid.svg b/scripts/python/matlib/ui/grid.svg
+--- a/scripts/python/matlib/ui/grid.svg	1970-01-01 01:00:00
++++ b/scripts/python/matlib/ui/grid.svg	2026-07-15 17:30:54
+@@ -0,0 +1 @@
++<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><g style="fill:none;stroke:rgb(255,255,255);stroke-opacity:0.65;stroke-width:2px;stroke-linecap:round;stroke-linejoin:round;"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></g></svg>
+diff -ruN a/scripts/python/matlib/ui/list.svg b/scripts/python/matlib/ui/list.svg
+--- a/scripts/python/matlib/ui/list.svg	1970-01-01 01:00:00
++++ b/scripts/python/matlib/ui/list.svg	2026-07-15 17:30:54
+@@ -0,0 +1 @@
++<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><g style="fill:none;stroke:rgb(255,255,255);stroke-opacity:0.65;stroke-width:2px;stroke-linecap:round;stroke-linejoin:round;"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></g></svg>
+diff -ruN a/scripts/python/matlib/ui/matlib.ui b/scripts/python/matlib/ui/matlib.ui
+--- a/scripts/python/matlib/ui/matlib.ui	2026-07-15 17:28:10
++++ b/scripts/python/matlib/ui/matlib.ui	2026-07-15 17:30:54
+@@ -1,4 +1,4 @@
+-<?xml version="1.0" encoding="UTF-8"?>
++<?xml version='1.0' encoding='UTF-8'?>
+ <ui version="4.0">
+  <class>MainWindow</class>
+  <widget class="QMainWindow" name="MainWindow">
+@@ -6,7 +6,7 @@
+    <rect>
+     <x>0</x>
+     <y>0</y>
+-    <width>800</width>
++    <width>741</width>
+     <height>821</height>
+    </rect>
+   </property>
+@@ -18,7 +18,7 @@
+   </property>
+   <property name="minimumSize">
+    <size>
+-    <width>600</width>
++    <width>420</width>
+     <height>400</height>
+    </size>
+   </property>
+@@ -28,6 +28,9 @@
+   <property name="windowTitle">
+    <string>MatLib</string>
+   </property>
++  <property name="autoFillBackground">
++   <bool>false</bool>
++  </property>
+   <widget class="DragDropCentralWidget" name="centralwidget">
+    <property name="sizePolicy">
+     <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+@@ -39,6 +42,9 @@
+     <bool>true</bool>
+    </property>
+    <layout class="QVBoxLayout" name="verticalLayout">
++    <property name="spacing">
++     <number>0</number>
++    </property>
+     <property name="leftMargin">
+      <number>0</number>
+     </property>
+@@ -52,6 +58,175 @@
+      <number>0</number>
+     </property>
+     <item>
++     <layout class="QHBoxLayout" name="horizontalLayout">
++      <property name="leftMargin">
++       <number>6</number>
++      </property>
++      <property name="topMargin">
++       <number>2</number>
++      </property>
++      <property name="rightMargin">
++       <number>6</number>
++      </property>
++      <property name="bottomMargin">
++       <number>2</number>
++      </property>
++      <item alignment="Qt::AlignVCenter">
++       <widget class="QLineEdit" name="line_filter">
++        <property name="sizePolicy">
++         <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
++          <horstretch>0</horstretch>
++          <verstretch>0</verstretch>
++         </sizepolicy>
++        </property>
++        <property name="minimumSize">
++         <size>
++          <width>80</width>
++          <height>0</height>
++         </size>
++        </property>
++        <property name="maximumSize">
++         <size>
++          <width>500</width>
++          <height>22</height>
++         </size>
++        </property>
++        <property name="acceptDrops">
++         <bool>false</bool>
++        </property>
++        <property name="placeholderText">
++         <string>Filter</string>
++        </property>
++       </widget>
++      </item>
++      <item><spacer name="filter_star_gap"><property name="orientation"><enum>Qt::Horizontal</enum></property><property name="sizeType"><enum>QSizePolicy::Fixed</enum></property><property name="sizeHint" stdset="0"><size><width>10</width><height>5</height></size></property></spacer></item><item alignment="Qt::AlignVCenter">
++       <widget class="QToolButton" name="cb_FavsOnly">
++        <property name="toolTip">
++         <string>Show favorites only</string>
++        </property>
++        <property name="text">
++         <string />
++        </property>
++        <property name="checkable">
++         <bool>true</bool>
++        </property>
++        <property name="autoRaise">
++         <bool>true</bool>
++        </property>
++       </widget>
++      </item>
++      <item><spacer name="star_view_gap"><property name="orientation"><enum>Qt::Horizontal</enum></property><property name="sizeType"><enum>QSizePolicy::Fixed</enum></property><property name="sizeHint" stdset="0"><size><width>6</width><height>5</height></size></property></spacer></item>
++      <item alignment="Qt::AlignVCenter">
++       <widget class="QToolButton" name="cb_ViewMode">
++        <property name="toolTip">
++         <string>Toggle grid / list view</string>
++        </property>
++        <property name="text">
++         <string />
++        </property>
++        <property name="checkable">
++         <bool>true</bool>
++        </property>
++        <property name="autoRaise">
++         <bool>true</bool>
++        </property>
++       </widget>
++      </item>
++      <item>
++       <spacer name="horizontalSpacer_3">
++        <property name="orientation">
++         <enum>Qt::Horizontal</enum>
++        </property>
++        <property name="sizeHint" stdset="0">
++         <size>
++          <width>5</width>
++          <height>5</height>
++         </size>
++        </property>
++       </spacer>
++      </item>
++      <item>
++       <spacer name="horizontalSpacer">
++        <property name="orientation">
++         <enum>Qt::Vertical</enum>
++        </property>
++        <property name="sizeType">
++         <enum>QSizePolicy::Fixed</enum>
++        </property>
++        <property name="sizeHint" stdset="0">
++         <size>
++          <width>50</width>
++          <height>20</height>
++         </size>
++        </property>
++       </spacer>
++      </item>
++      <item>
++       <layout class="QVBoxLayout" name="slider_layout">
++        <item>
++         <widget class="QSlider" name="slide_iconSize">
++          <property name="sizePolicy">
++           <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
++            <horstretch>0</horstretch>
++            <verstretch>0</verstretch>
++           </sizepolicy>
++          </property>
++          <property name="maximumSize">
++           <size>
++            <width>500</width>
++            <height>16777215</height>
++           </size>
++          </property>
++          <property name="mouseTracking">
++           <bool>true</bool>
++          </property>
++          <property name="acceptDrops">
++           <bool>false</bool>
++          </property>
++          <property name="minimum">
++           <number>0</number>
++          </property>
++          <property name="maximum">
++           <number>512</number>
++          </property>
++          <property name="singleStep">
++           <number>10</number>
++          </property>
++          <property name="pageStep">
++           <number>50</number>
++          </property>
++          <property name="value">
++           <number>256</number>
++          </property>
++          <property name="tracking">
++           <bool>true</bool>
++          </property>
++          <property name="orientation">
++           <enum>Qt::Horizontal</enum>
++          </property>
++         </widget>
++        </item>
++       </layout>
++      </item>
++      <item>
++       <spacer name="horizontalSpacer_2">
++        <property name="orientation">
++         <enum>Qt::Horizontal</enum>
++        </property>
++        <property name="sizeType">
++         <enum>QSizePolicy::Fixed</enum>
++        </property>
++        <property name="sizeHint" stdset="0">
++         <size>
++          <width>20</width>
++          <height>5</height>
++         </size>
++        </property>
++       </spacer>
++      </item>
++     </layout>
++    </item>
++    <item>
+      <widget class="QSplitter" name="splitter">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+@@ -109,7 +284,7 @@
+         <enum>QAbstractItemView::NoDragDrop</enum>
+        </property>
+        <property name="alternatingRowColors">
+-        <bool>false</bool>
++        <bool>true</bool>
+        </property>
+       </widget>
+       <widget class="QWidget" name="layoutWidget">
+@@ -118,124 +293,6 @@
+          <number>2</number>
+         </property>
+         <item>
+-         <layout class="QHBoxLayout" name="horizontalLayout">
+-          <item>
+-           <widget class="QLineEdit" name="line_filter">
+-            <property name="sizePolicy">
+-             <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+-              <horstretch>0</horstretch>
+-              <verstretch>0</verstretch>
+-             </sizepolicy>
+-            </property>
+-            <property name="minimumSize">
+-             <size>
+-              <width>80</width>
+-              <height>0</height>
+-             </size>
+-            </property>
+-            <property name="maximumSize">
+-             <size>
+-              <width>500</width>
+-              <height>16777215</height>
+-             </size>
+-            </property>
+-            <property name="acceptDrops">
+-             <bool>false</bool>
+-            </property>
+-            <property name="placeholderText">
+-             <string>Filter</string>
+-            </property>
+-           </widget>
+-          </item>
+-          <item>
+-           <widget class="QCheckBox" name="cb_FavsOnly">
+-            <property name="text">
+-             <string>Favs only</string>
+-            </property>
+-           </widget>
+-          </item>
+-          <item>
+-           <spacer name="horizontalSpacer">
+-            <property name="orientation">
+-             <enum>Qt::Vertical</enum>
+-            </property>
+-            <property name="sizeType">
+-             <enum>QSizePolicy::Fixed</enum>
+-            </property>
+-            <property name="sizeHint" stdset="0">
+-             <size>
+-              <width>50</width>
+-              <height>20</height>
+-             </size>
+-            </property>
+-           </spacer>
+-          </item>
+-          <item>
+-           <layout class="QVBoxLayout" name="slider_layout">
+-            <item>
+-             <widget class="QSlider" name="slide_iconSize">
+-              <property name="sizePolicy">
+-               <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+-                <horstretch>0</horstretch>
+-                <verstretch>0</verstretch>
+-               </sizepolicy>
+-              </property>
+-              <property name="maximumSize">
+-               <size>
+-                <width>200</width>
+-                <height>16777215</height>
+-               </size>
+-              </property>
+-              <property name="mouseTracking">
+-               <bool>true</bool>
+-              </property>
+-              <property name="acceptDrops">
+-               <bool>false</bool>
+-              </property>
+-              <property name="minimum">
+-               <number>0</number>
+-              </property>
+-              <property name="maximum">
+-               <number>512</number>
+-              </property>
+-              <property name="singleStep">
+-               <number>10</number>
+-              </property>
+-              <property name="pageStep">
+-               <number>50</number>
+-              </property>
+-              <property name="value">
+-               <number>256</number>
+-              </property>
+-              <property name="tracking">
+-               <bool>true</bool>
+-              </property>
+-              <property name="orientation">
+-               <enum>Qt::Horizontal</enum>
+-              </property>
+-             </widget>
+-            </item>
+-           </layout>
+-          </item>
+-          <item>
+-           <spacer name="horizontalSpacer_2">
+-            <property name="orientation">
+-             <enum>Qt::Horizontal</enum>
+-            </property>
+-            <property name="sizeType">
+-             <enum>QSizePolicy::Fixed</enum>
+-            </property>
+-            <property name="sizeHint" stdset="0">
+-             <size>
+-              <width>20</width>
+-              <height>5</height>
+-             </size>
+-            </property>
+-           </spacer>
+-          </item>
+-         </layout>
+-        </item>
+-        <item>
+          <widget class="DragDropListView" name="thumbview">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+@@ -330,9 +387,6 @@
+           <property name="selectionRectVisible">
+            <bool>true</bool>
+           </property>
+-          <property name="itemAlignment">
+-           <set>Qt::AlignCenter</set>
+-          </property>
+          </widget>
+         </item>
+        </layout>
+@@ -406,8 +460,8 @@
+             <rect>
+              <x>0</x>
+              <y>0</y>
+-             <width>250</width>
+-             <height>794</height>
++             <width>400</width>
++             <height>758</height>
+             </rect>
+            </property>
+            <property name="acceptDrops">
+@@ -430,280 +484,181 @@
+              <number>0</number>
+             </property>
+             <item>
+-             <widget class="QGroupBox" name="groupBox_2">
+-              <property name="sizePolicy">
+-               <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
+-                <horstretch>0</horstretch>
+-                <verstretch>0</verstretch>
+-               </sizepolicy>
++             <layout class="QFormLayout" name="details_form">
++              <property name="fieldGrowthPolicy">
++               <enum>QFormLayout::ExpandingFieldsGrow</enum>
+               </property>
+-              <property name="title">
+-               <string>Material Properties</string>
++              <property name="labelAlignment">
++               <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+               </property>
+-              <layout class="QVBoxLayout" name="verticalLayout_4">
+-               <item>
+-                <layout class="QVBoxLayout" name="verticalLayout_3">
+-                 <item>
+-                  <widget class="QLabel" name="Name">
+-                   <property name="text">
+-                    <string>Name</string>
+-                   </property>
+-                  </widget>
+-                 </item>
+-                 <item>
+-                  <widget class="QLineEdit" name="line_name">
+-                   <property name="sizePolicy">
+-                    <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+-                     <horstretch>0</horstretch>
+-                     <verstretch>0</verstretch>
+-                    </sizepolicy>
+-                   </property>
+-                   <property name="acceptDrops">
+-                    <bool>false</bool>
+-                   </property>
+-                  </widget>
+-                 </item>
+-                 <item>
+-                  <widget class="QLabel" name="Category">
+-                   <property name="text">
+-                    <string>Category</string>
+-                   </property>
+-                  </widget>
+-                 </item>
+-                 <item>
+-                  <widget class="QLineEdit" name="line_cat">
+-                   <property name="acceptDrops">
+-                    <bool>false</bool>
+-                   </property>
+-                  </widget>
+-                 </item>
+-                 <item>
+-                  <widget class="QLabel" name="Tags">
+-                   <property name="text">
+-                    <string>Tags</string>
+-                   </property>
+-                  </widget>
+-                 </item>
+-                 <item>
+-                  <widget class="QLineEdit" name="line_tags">
+-                   <property name="acceptDrops">
+-                    <bool>false</bool>
+-                   </property>
+-                  </widget>
+-                 </item>
+-                 <item>
+-                  <widget class="QLabel" name="id">
+-                   <property name="text">
+-                    <string>ID</string>
+-                   </property>
+-                  </widget>
+-                 </item>
+-                 <item>
+-                  <widget class="QLineEdit" name="line_id">
+-                   <property name="acceptDrops">
+-                    <bool>false</bool>
+-                   </property>
+-                   <property name="readOnly">
+-                    <bool>true</bool>
+-                   </property>
+-                  </widget>
+-                 </item>
+-                 <item>
+-                  <widget class="QLabel" name="date">
+-                   <property name="text">
+-                    <string>Date</string>
+-                   </property>
+-                  </widget>
+-                 </item>
+-                 <item>
+-                  <widget class="QLineEdit" name="line_date">
+-                   <property name="acceptDrops">
+-                    <bool>false</bool>
+-                   </property>
+-                  </widget>
+-                 </item>
+-                 <item>
+-                  <widget class="QCheckBox" name="cb_set_fav">
+-                   <property name="text">
+-                    <string>Favorite</string>
+-                   </property>
+-                  </widget>
+-                 </item>
+-                 <item>
+-                  <widget class="QPushButton" name="btn_update">
+-                   <property name="sizePolicy">
+-                    <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+-                     <horstretch>0</horstretch>
+-                     <verstretch>0</verstretch>
+-                    </sizepolicy>
+-                   </property>
+-                   <property name="minimumSize">
+-                    <size>
+-                     <width>200</width>
+-                     <height>0</height>
+-                    </size>
+-                   </property>
+-                   <property name="maximumSize">
+-                    <size>
+-                     <width>300</width>
+-                     <height>16777215</height>
+-                    </size>
+-                   </property>
+-                   <property name="text">
+-                    <string>Update Material</string>
+-                   </property>
+-                   <property name="flat">
+-                    <bool>false</bool>
+-                   </property>
+-                  </widget>
+-                 </item>
+-                </layout>
+-               </item>
+-              </layout>
+-             </widget>
++              <item row="1" column="0">
++               <widget class="QLabel" name="label_name">
++                <property name="text">
++                 <string>Name</string>
++                </property>
++               </widget>
++              </item>
++              <item row="1" column="1">
++               <widget class="QLineEdit" name="line_name">
++                <property name="sizePolicy">
++                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
++                  <horstretch>0</horstretch>
++                  <verstretch>0</verstretch>
++                 </sizepolicy>
++                </property>
++                <property name="acceptDrops">
++                 <bool>false</bool>
++                </property>
++               </widget>
++              </item>
++              <item row="2" column="0">
++               <widget class="QLabel" name="label_cat_single">
++                <property name="text">
++                 <string>Category</string>
++                </property>
++               </widget>
++              </item>
++              <item row="2" column="1">
++               <widget class="QComboBox" name="cat_combo">
++                <property name="minimumSize">
++                 <size>
++                  <width>200</width>
++                  <height>0</height>
++                 </size>
++                </property>
++                <property name="maximumSize">
++                 <size>
++                  <width>200</width>
++                  <height>16777215</height>
++                 </size>
++                </property>
++               </widget>
++              </item>
++              <item row="3" column="1">
++               <widget class="QCheckBox" name="box_multicat">
++                <property name="text">
++                 <string>Multi-category material</string>
++                </property>
++               </widget>
++              </item>
++              <item row="4" column="0">
++               <widget class="QLabel" name="label_cat_multi">
++                <property name="text">
++                 <string>Category</string>
++                </property>
++               </widget>
++              </item>
++              <item row="4" column="1">
++               <widget class="QLineEdit" name="line_cat">
++                <property name="acceptDrops">
++                 <bool>false</bool>
++                </property>
++               </widget>
++              </item>
++              <item row="5" column="0">
++               <widget class="QLabel" name="label_tags">
++                <property name="text">
++                 <string>Tags</string>
++                </property>
++               </widget>
++              </item>
++              <item row="5" column="1">
++               <widget class="QLineEdit" name="line_tags">
++                <property name="acceptDrops">
++                 <bool>false</bool>
++                </property>
++               </widget>
++              </item>
++              <item row="6" column="1">
++               <widget class="QCheckBox" name="cb_set_fav">
++                <property name="text">
++                 <string>Favorite</string>
++                </property>
++               </widget>
++              </item>
++              <item row="7" column="1">
++               <widget class="QPushButton" name="btn_update">
++                <property name="sizePolicy">
++                 <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
++                  <horstretch>0</horstretch>
++                  <verstretch>0</verstretch>
++                 </sizepolicy>
++                </property>
++                <property name="minimumSize">
++                 <size>
++                  <width>200</width>
++                  <height>0</height>
++                 </size>
++                </property>
++                <property name="maximumSize">
++                 <size>
++                  <width>300</width>
++                  <height>16777215</height>
++                 </size>
++                </property>
++                <property name="text">
++                 <string>Update Material</string>
++                </property>
++                <property name="flat">
++                 <bool>false</bool>
++                </property>
++               </widget>
++              </item>
++              <item row="8" column="0">
++               <widget class="QLabel" name="label_date">
++                <property name="text">
++                 <string>Date</string>
++                </property>
++               </widget>
++              </item>
++              <item row="8" column="1">
++               <widget class="QLineEdit" name="line_date">
++                <property name="acceptDrops">
++                 <bool>false</bool>
++                </property>
++               </widget>
++              </item>
++              <item row="9" column="0">
++               <widget class="QLabel" name="label_id">
++                <property name="text">
++                 <string>ID</string>
++                </property>
++               </widget>
++              </item>
++              <item row="9" column="1">
++               <widget class="QLineEdit" name="line_id">
++                <property name="acceptDrops">
++                 <bool>false</bool>
++                </property>
++                <property name="readOnly">
++                 <bool>true</bool>
++                </property>
++               </widget>
++              </item>
++              <item row="0" column="1">
++               <spacer name="verticalSpacer">
++                <property name="orientation">
++                 <enum>Qt::Vertical</enum>
++                </property>
++                <property name="sizeHint" stdset="0">
++                 <size>
++                  <width>20</width>
++                  <height>10</height>
++                 </size>
++                </property>
++               </spacer>
++              </item>
++             </layout>
+             </item>
+             <item>
+-             <widget class="QGroupBox" name="groupBox">
+-              <property name="sizePolicy">
+-               <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
+-                <horstretch>0</horstretch>
+-                <verstretch>0</verstretch>
+-               </sizepolicy>
+-              </property>
+-              <property name="maximumSize">
+-               <size>
+-                <width>16777215</width>
+-                <height>16777215</height>
+-               </size>
+-              </property>
+-              <property name="acceptDrops">
+-               <bool>false</bool>
+-              </property>
+-              <property name="autoFillBackground">
+-               <bool>false</bool>
+-              </property>
+-              <property name="title">
+-               <string>Renderer</string>
+-              </property>
+-              <property name="flat">
+-               <bool>false</bool>
+-              </property>
+-              <property name="checkable">
+-               <bool>false</bool>
+-              </property>
+-              <layout class="QGridLayout" name="gridLayout" rowstretch="0">
+-               <property name="leftMargin">
+-                <number>5</number>
+-               </property>
+-               <property name="topMargin">
+-                <number>12</number>
+-               </property>
+-               <property name="rightMargin">
+-                <number>5</number>
+-               </property>
+-               <property name="bottomMargin">
+-                <number>12</number>
+-               </property>
+-               <item row="0" column="0">
+-                <layout class="QGridLayout" name="gridLayout_2">
+-                 <item row="1" column="0">
+-                  <widget class="QRadioButton" name="cb_MatX">
+-                   <property name="enabled">
+-                    <bool>true</bool>
+-                   </property>
+-                   <property name="text">
+-                    <string>Karma</string>
+-                   </property>
+-                   <property name="checked">
+-                    <bool>false</bool>
+-                   </property>
+-                   <attribute name="buttonGroup">
+-                    <string notr="true">rendererGroup</string>
+-                   </attribute>
+-                  </widget>
+-                 </item>
+-                 <item row="3" column="0">
+-                  <widget class="QRadioButton" name="cb_Arnold">
+-                   <property name="text">
+-                    <string>Arnold</string>
+-                   </property>
+-                   <property name="checked">
+-                    <bool>false</bool>
+-                   </property>
+-                   <attribute name="buttonGroup">
+-                    <string notr="true">rendererGroup</string>
+-                   </attribute>
+-                  </widget>
+-                 </item>
+-                 <item row="5" column="0">
+-                  <widget class="QRadioButton" name="cb_Octane">
+-                   <property name="text">
+-                    <string>Octane</string>
+-                   </property>
+-                   <property name="checked">
+-                    <bool>false</bool>
+-                   </property>
+-                   <attribute name="buttonGroup">
+-                    <string notr="true">rendererGroup</string>
+-                   </attribute>
+-                  </widget>
+-                 </item>
+-                 <item row="4" column="0">
+-                  <widget class="QRadioButton" name="cb_Redshift">
+-                   <property name="text">
+-                    <string>Redshift</string>
+-                   </property>
+-                   <property name="checked">
+-                    <bool>false</bool>
+-                   </property>
+-                   <attribute name="buttonGroup">
+-                    <string notr="true">rendererGroup</string>
+-                   </attribute>
+-                  </widget>
+-                 </item>
+-                 <item row="2" column="0">
+-                  <widget class="QRadioButton" name="cb_Mantra">
+-                   <property name="text">
+-                    <string>Mantra</string>
+-                   </property>
+-                   <property name="checked">
+-                    <bool>false</bool>
+-                   </property>
+-                   <attribute name="buttonGroup">
+-                    <string notr="true">rendererGroup</string>
+-                   </attribute>
+-                  </widget>
+-                 </item>
+-                 <item row="0" column="0">
+-                  <widget class="QRadioButton" name="cb_renderer_all">
+-                   <property name="text">
+-                    <string>All</string>
+-                   </property>
+-                   <property name="checked">
+-                    <bool>true</bool>
+-                   </property>
+-                   <attribute name="buttonGroup">
+-                    <string notr="true">rendererGroup</string>
+-                   </attribute>
+-                  </widget>
+-                 </item>
+-                </layout>
+-               </item>
+-              </layout>
+-             </widget>
+-            </item>
+-            <item>
+-             <spacer name="verticalSpacer_2">
++             <spacer name="details_bottom_spacer">
+               <property name="orientation">
+                <enum>Qt::Vertical</enum>
+               </property>
+-              <property name="sizeType">
+-               <enum>QSizePolicy::MinimumExpanding</enum>
+-              </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+-                <width>80</width>
+-                <height>80</height>
++                <width>20</width>
++                <height>40</height>
+                </size>
+               </property>
+              </spacer>
+@@ -723,8 +678,8 @@
+     <rect>
+      <x>0</x>
+      <y>0</y>
+-     <width>800</width>
+-     <height>27</height>
++     <width>741</width>
++     <height>33</height>
+     </rect>
+    </property>
+    <property name="acceptDrops">
+@@ -740,17 +695,17 @@
+     <property name="title">
+      <string>Library</string>
+     </property>
+-    <addaction name="action_set_library"/>
+-    <addaction name="action_open"/>
+-    <addaction name="separator"/>
+-    <addaction name="action_prefs"/>
+-    <addaction name="action_cleanup_db"/>
+-    <addaction name="separator"/>
+-    <addaction name="action_open_folder"/>
+-    <addaction name="separator"/>
+-    <addaction name="action_about"/>
+-    <addaction name="separator"/>
+-    <addaction name="action_import_lib_v1"/>
++    <addaction name="action_set_library" />
++    <addaction name="action_open" />
++    <addaction name="separator" />
++    <addaction name="action_prefs" />
++    <addaction name="action_cleanup_db" />
++    <addaction name="separator" />
++    <addaction name="action_open_folder" />
++    <addaction name="separator" />
++    <addaction name="action_about" />
++    <addaction name="separator" />
++    <addaction name="action_import_lib_v1" />
+    </widget>
+    <widget class="QMenu" name="menuView">
+     <property name="acceptDrops">
+@@ -759,12 +714,12 @@
+     <property name="title">
+      <string>View</string>
+     </property>
+-    <addaction name="action_show_cat"/>
+-    <addaction name="action_show_details"/>
+-    <addaction name="separator"/>
++    <addaction name="action_show_cat" />
++    <addaction name="action_show_details" />
++    <addaction name="separator" />
+    </widget>
+-   <addaction name="menu_file"/>
+-   <addaction name="menuView"/>
++   <addaction name="menu_file" />
++   <addaction name="menuView" />
+   </widget>
+   <action name="action_updateAll">
+    <property name="text">
+@@ -872,9 +827,6 @@
+    <header>dragdrop_widgets.py</header>
+   </customwidget>
+  </customwidgets>
+- <resources/>
+- <connections/>
+- <buttongroups>
+-  <buttongroup name="rendererGroup"/>
+- </buttongroups>
+-</ui>
++ <resources />
++ <connections />
++</ui>
+\ No newline at end of file
+diff -ruN a/scripts/python/matlib/ui/star.svg b/scripts/python/matlib/ui/star.svg
+--- a/scripts/python/matlib/ui/star.svg	1970-01-01 01:00:00
++++ b/scripts/python/matlib/ui/star.svg	2026-07-15 17:30:54
+@@ -0,0 +1 @@
++<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" style="fill:none;stroke:rgb(255,255,255);stroke-opacity:0.65;stroke-width:2px;stroke-linecap:round;stroke-linejoin:round;"/></svg>
+diff -ruN a/scripts/python/matlib/ui/star_on.svg b/scripts/python/matlib/ui/star_on.svg
+--- a/scripts/python/matlib/ui/star_on.svg	1970-01-01 01:00:00
++++ b/scripts/python/matlib/ui/star_on.svg	2026-07-15 17:30:54
+@@ -0,0 +1 @@
++<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" style="fill:rgb(255,196,78);stroke:rgb(255,196,78);stroke-width:2px;stroke-linecap:round;stroke-linejoin:round;"/></svg>

@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 36">
+  <!-- View menu icon (eye + corner menu triangle), from the
+       "ui_wireframe 2 only menu" design file. Colors are load-time tint targets:
+       #5d7abd = icon body, #7f807f = menu triangle, #2d2d2d = punch-out.
+       The eye BODY is centered in the viewBox (the design centers the
+       clicked-state chip on the body); the triangle hangs into the
+       bottom-right corner, deliberately off-balance. -->
+  <g transform="translate(-1393.0625,-9.545)">
+    <path fill="#5d7abd" d="M 1396.5625 27.545471 C 1396.5625 27.545471 1401.835205 17 1411.0625 17 C 1420.289795 17 1425.5625 27.545471 1425.5625 27.545471 C 1425.5625 27.545471 1420.289795 38.090881 1411.0625 38.090881 C 1401.835205 38.090881 1396.5625 27.545471 1396.5625 27.545471 Z"/>
+    <path fill="#2d2d2d" d="M 1416 27.545471 C 1416 30.272339 1413.761475 32.482971 1411 32.482971 C 1408.238525 32.482971 1406 30.272339 1406 27.545471 C 1406 24.818542 1408.238525 22.607971 1411 22.607971 C 1413.761475 22.607971 1416 24.818542 1416 27.545471 Z"/>
+    <path fill="#7f807f" fill-rule="evenodd" d="M 1420 45 L 1428 45 L 1428 37 Z"/>
+  </g>
+</svg>

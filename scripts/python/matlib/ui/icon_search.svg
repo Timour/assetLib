@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- Filter-box magnifier, from the "ui_wireframe 2 only menu"
+       design file. Deliberately dark (#2d2d2d) - punched into the #434343 box,
+       not accent-colored. -->
+  <g transform="translate(-591.5,-12.5)">
+    <path fill="none" stroke="#2d2d2d" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" d="M 617.222229 27.111084 C 617.222229 33.24762 612.24762 38.222229 606.111084 38.222229 C 599.974609 38.222229 595 33.24762 595 27.111084 C 595 20.974609 599.974609 16 606.111084 16 C 612.24762 16 617.222229 20.974609 617.222229 27.111084 Z"/>
+    <path fill="none" stroke="#2d2d2d" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" d="M 620 41 L 613.958313 34.958313"/>
+  </g>
+</svg>

@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- List view-mode state: three lines with lead dots in the accent
+       purple, per the "ui_wireframe 2 only menu" design file. -->
+  <g transform="translate(-1299.5,-12.3)" fill="none" stroke="#5d7abd" stroke-linecap="round" stroke-linejoin="round">
+    <path stroke-width="3.313097" d="M 1309.944458 20 L 1328 20"/>
+    <path stroke-width="3.313097" d="M 1309.944458 28.333313 L 1328 28.333313"/>
+    <path stroke-width="3.313097" d="M 1309.944458 36.666687 L 1328 36.666687"/>
+    <path stroke-width="4.259526" d="M 1303 20 L 1303.013916 20"/>
+    <path stroke-width="4.259526" d="M 1303 28.333313 L 1303.013916 28.333313"/>
+    <path stroke-width="4.259526" d="M 1303 36.666687 L 1303.013916 36.666687"/>
+  </g>
+</svg>

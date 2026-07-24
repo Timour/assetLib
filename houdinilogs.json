@@ -1,0 +1,448 @@
+[
+	{
+		"sourcename":"Standard Error",
+		"message":"2026-07-20 21:05:40.169 system_profiler[31670:11313925] hw.cpufamily: 0x1b588bb3",
+		"time":1784574339.66554308,
+		"threadid":3
+	},
+	{
+		"sourcename":"Standard Error",
+		"message":"UNSUPPORTED (log once): POSSIBLE ISSUE: unit 1 GLD_TEXTURE_INDEX_2D is unloadable and bound to sampler type (Float) - using zero texture because texture unloadable",
+		"time":1784574349.59541297,
+		"threadid":3
+	},
+	{
+		"sourcename":"Node Errors",
+		"message":"Ignoring missing explicit primitive: /materials/Bark_Blue_gum",
+		"sourcecontext":"/obj/lopnet1/karmarenderproperties1/karmastandardrendervars/output0",
+		"errorseverity":3,
+		"time":1784574410.33658099,
+		"threadid":1
+	},
+	{
+		"sourcename":"Node Errors",
+		"message":"Targeted missing explicit primitive: /shaderBallScene/cameras/RenderCam",
+		"sourcecontext":"/obj/lopnet1/karmarenderproperties1/rendersettings",
+		"errorseverity":1,
+		"time":1784574410.3387301,
+		"threadid":1
+	},
+	{
+		"sourcename":"Standard Error",
+		"message":"UNSUPPORTED (log once): POSSIBLE ISSUE: unit 1 GLD_TEXTURE_INDEX_2D is unloadable and bound to sampler type (Float) - using zero texture because texture unloadable",
+		"time":1784574410.97860003,
+		"threadid":3
+	},
+	{
+		"sourcename":"External Render Processes",
+		"message":"[Redshift] Redshift for Houdini plugin version 2026.7.1 (Jun 10 2026 20:55:40)",
+		"time":1784574417.00835299,
+		"threadid":3,
+		"extidentifier":"/obj/lopnet1/usdrender_rop1",
+		"extpid":31709
+	},
+	{
+		"sourcename":"External Render Processes",
+		"message":"[Redshift] Plugin compile time HDK version: 21.0.729",
+		"time":1784574417.00835299,
+		"threadid":3,
+		"extidentifier":"/obj/lopnet1/usdrender_rop1",
+		"extpid":31709
+	},
+	{
+		"sourcename":"External Render Processes",
+		"message":"[Redshift] Houdini host version: 21.0.778",
+		"time":1784574417.00835299,
+		"threadid":3,
+		"extidentifier":"/obj/lopnet1/usdrender_rop1",
+		"extpid":31709
+	},
+	{
+		"sourcename":"External Render Processes",
+		"message":"[Redshift] Houdini and the Redshift plugin versions don't match. Houdini or Redshift may become unstable, with features not available or crashes at render time",
+		"time":1784574417.00835299,
+		"threadid":3,
+		"extidentifier":"/obj/lopnet1/usdrender_rop1",
+		"extpid":31709
+	},
+	{
+		"sourcename":"External Render Processes",
+		"message":"The Houdini (21.0.778) and Redshift plugin (21.0.729) versions don't match. Houdini or Redshift may become unstable, with not available features or crashes at render time.[Redshift] Plugin dso/dll and config path: /Applications/Maxon Redshift 2026/Plugins/Houdini/21.0.729_arm64/dso",
+		"time":1784574417.00835299,
+		"threadid":3,
+		"extidentifier":"/obj/lopnet1/usdrender_rop1",
+		"extpid":31709
+	},
+	{
+		"sourcename":"External Render Processes",
+		"message":"[Redshift] Core data path: /Applications/Maxon Redshift 2026",
+		"time":1784574417.00835299,
+		"threadid":3,
+		"extidentifier":"/obj/lopnet1/usdrender_rop1",
+		"extpid":31709
+	},
+	{
+		"sourcename":"External Render Processes",
+		"message":"[Redshift] Local data path: /Users/timour/redshift",
+		"time":1784574417.00835299,
+		"threadid":3,
+		"extidentifier":"/obj/lopnet1/usdrender_rop1",
+		"extpid":31709
+	},
+	{
+		"sourcename":"External Render Processes",
+		"message":"[Redshift] Procedurals path: /Applications/Maxon Redshift 2026/procedurals",
+		"time":1784574417.00835299,
+		"threadid":3,
+		"extidentifier":"/obj/lopnet1/usdrender_rop1",
+		"extpid":31709
+	},
+	{
+		"sourcename":"External Render Processes",
+		"message":"[Redshift] Preferences file path: /Users/timour/redshift/preferences.xml",
+		"time":1784574417.00835299,
+		"threadid":3,
+		"extidentifier":"/obj/lopnet1/usdrender_rop1",
+		"extpid":31709
+	},
+	{
+		"sourcename":"External Render Processes",
+		"message":"[Redshift] License path: /Users/timour/redshift",
+		"time":1784574417.00835299,
+		"threadid":3,
+		"extidentifier":"/obj/lopnet1/usdrender_rop1",
+		"extpid":31709
+	},
+	{
+		"sourcename":"External Render Processes",
+		"message":"[Redshift] Plugin configured for a cmdline session",
+		"time":1784574417.00835299,
+		"threadid":3,
+		"extidentifier":"/obj/lopnet1/usdrender_rop1",
+		"extpid":31709
+	},
+	{
+		"sourcename":"External Render Processes",
+		"message":"[Redshift] Redshift for Houdini plugin version 2026.7.1 (Jun 10 2026 20:55:40)",
+		"time":1784574417.00965405,
+		"threadid":3,
+		"extpid":31708
+	},
+	{
+		"sourcename":"External Render Processes",
+		"message":"[Redshift] Plugin compile time HDK version: 21.0.729",
+		"time":1784574417.00965405,
+		"threadid":3,
+		"extpid":31708
+	},
+	{
+		"sourcename":"External Render Processes",
+		"message":"[Redshift] Houdini host version: 21.0.778",
+		"time":1784574417.00965405,
+		"threadid":3,
+		"extpid":31708
+	},
+	{
+		"sourcename":"External Render Processes",
+		"message":"[Redshift] Houdini and the Redshift plugin versions don't match. Houdini or Redshift may become unstable, with features not available or crashes at render time",
+		"time":1784574417.00965405,
+		"threadid":3,
+		"extpid":31708
+	},
+	{
+		"sourcename":"External Render Processes",
+		"message":"The Houdini (21.0.778) and Redshift plugin (21.0.729) versions don't match. Houdini or Redshift may become unstable, with not available features or crashes at render time.[Redshift] Plugin dso/dll and config path: /Applications/Maxon Redshift 2026/Plugins/Houdini/21.0.729_arm64/dso",
+		"time":1784574417.00965405,
+		"threadid":3,
+		"extpid":31708
+	},
+	{
+		"sourcename":"External Render Processes",
+		"message":"[Redshift] Core data path: /Applications/Maxon Redshift 2026",
+		"time":1784574417.00965405,
+		"threadid":3,
+		"extpid":31708
+	},
+	{
+		"sourcename":"External Render Processes",
+		"message":"[Redshift] Local data path: /Users/timour/redshift",
+		"time":1784574417.00965405,
+		"threadid":3,
+		"extpid":31708
+	},
+	{
+		"sourcename":"External Render Processes",
+		"message":"[Redshift] Procedurals path: /Applications/Maxon Redshift 2026/procedurals",
+		"time":1784574417.00965405,
+		"threadid":3,
+		"extpid":31708
+	},
+	{
+		"sourcename":"External Render Processes",
+		"message":"[Redshift] Preferences file path: /Users/timour/redshift/preferences.xml",
+		"time":1784574417.00965405,
+		"threadid":3,
+		"extpid":31708
+	},
+	{
+		"sourcename":"External Render Processes",
+		"message":"[Redshift] License path: /Users/timour/redshift",
+		"time":1784574417.00965405,
+		"threadid":3,
+		"extpid":31708
+	},
+	{
+		"sourcename":"External Render Processes",
+		"message":"[Redshift] Plugin configured for a cmdline session",
+		"time":1784574417.00965405,
+		"threadid":3,
+		"extpid":31708
+	},
+	{
+		"sourcename":"External Render Processes",
+		"message":"2026-07-20 21:06:57.944 system_profiler[31718:11315135] hw.cpufamily: 0x1b588bb3",
+		"time":1784574417.44077802,
+		"threadid":3,
+		"extidentifier":"/obj/lopnet1/usdrender_rop1",
+		"extpid":31709
+	},
+	{
+		"sourcename":"External Render Processes",
+		"message":"2026-07-20 21:06:57.944 system_profiler[31718:11315135] hw.cpufamily: 0x1b588bb3",
+		"time":1784574417.44204402,
+		"threadid":3,
+		"extpid":31708
+	},
+	{
+		"sourcename":"External Render Processes",
+		"message":"[Redshift] Closing the RS instance. End of the plugin log system.",
+		"time":1784574425.72547007,
+		"threadid":3,
+		"extidentifier":"/obj/lopnet1/usdrender_rop1",
+		"extpid":31709
+	},
+	{
+		"sourcename":"External Render Processes",
+		"message":"[Redshift] Closing the RS instance. End of the plugin log system.",
+		"time":1784574425.72673512,
+		"threadid":3,
+		"extpid":31708
+	},
+	{
+		"sourcename":"Node Errors",
+		"message":"Ignoring missing explicit primitive: /materials/Bark_Base",
+		"sourcecontext":"/obj/lopnet1/karmarenderproperties1/karmastandardrendervars/output0",
+		"errorseverity":3,
+		"time":1784576486.34496403,
+		"threadid":1
+	},
+	{
+		"sourcename":"Node Errors",
+		"message":"Targeted missing explicit primitive: /shaderBallScene/cameras/RenderCam",
+		"sourcecontext":"/obj/lopnet1/karmarenderproperties1/rendersettings",
+		"errorseverity":1,
+		"time":1784576486.34783006,
+		"threadid":1
+	},
+	{
+		"sourcename":"Standard Error",
+		"message":"UNSUPPORTED (log once): POSSIBLE ISSUE: unit 1 GLD_TEXTURE_INDEX_2D is unloadable and bound to sampler type (Float) - using zero texture because texture unloadable",
+		"time":1784576487.21729493,
+		"threadid":3
+	},
+	{
+		"sourcename":"External Render Processes",
+		"message":"[Redshift] Redshift for Houdini plugin version 2026.7.1 (Jun 10 2026 20:55:40)",
+		"time":1784576493.05097914,
+		"threadid":3,
+		"extidentifier":"/obj/lopnet1/usdrender_rop1",
+		"extpid":32124
+	},
+	{
+		"sourcename":"External Render Processes",
+		"message":"[Redshift] Plugin compile time HDK version: 21.0.729",
+		"time":1784576493.05097914,
+		"threadid":3,
+		"extidentifier":"/obj/lopnet1/usdrender_rop1",
+		"extpid":32124
+	},
+	{
+		"sourcename":"External Render Processes",
+		"message":"[Redshift] Houdini host version: 21.0.778",
+		"time":1784576493.05097914,
+		"threadid":3,
+		"extidentifier":"/obj/lopnet1/usdrender_rop1",
+		"extpid":32124
+	},
+	{
+		"sourcename":"External Render Processes",
+		"message":"[Redshift] Houdini and the Redshift plugin versions don't match. Houdini or Redshift may become unstable, with features not available or crashes at render time",
+		"time":1784576493.05097914,
+		"threadid":3,
+		"extidentifier":"/obj/lopnet1/usdrender_rop1",
+		"extpid":32124
+	},
+	{
+		"sourcename":"External Render Processes",
+		"message":"The Houdini (21.0.778) and Redshift plugin (21.0.729) versions don't match. Houdini or Redshift may become unstable, with not available features or crashes at render time.[Redshift] Plugin dso/dll and config path: /Applications/Maxon Redshift 2026/Plugins/Houdini/21.0.729_arm64/dso",
+		"time":1784576493.05097914,
+		"threadid":3,
+		"extidentifier":"/obj/lopnet1/usdrender_rop1",
+		"extpid":32124
+	},
+	{
+		"sourcename":"External Render Processes",
+		"message":"[Redshift] Core data path: /Applications/Maxon Redshift 2026",
+		"time":1784576493.05097914,
+		"threadid":3,
+		"extidentifier":"/obj/lopnet1/usdrender_rop1",
+		"extpid":32124
+	},
+	{
+		"sourcename":"External Render Processes",
+		"message":"[Redshift] Local data path: /Users/timour/redshift",
+		"time":1784576493.05097914,
+		"threadid":3,
+		"extidentifier":"/obj/lopnet1/usdrender_rop1",
+		"extpid":32124
+	},
+	{
+		"sourcename":"External Render Processes",
+		"message":"[Redshift] Procedurals path: /Applications/Maxon Redshift 2026/procedurals",
+		"time":1784576493.05097914,
+		"threadid":3,
+		"extidentifier":"/obj/lopnet1/usdrender_rop1",
+		"extpid":32124
+	},
+	{
+		"sourcename":"External Render Processes",
+		"message":"[Redshift] Preferences file path: /Users/timour/redshift/preferences.xml",
+		"time":1784576493.05097914,
+		"threadid":3,
+		"extidentifier":"/obj/lopnet1/usdrender_rop1",
+		"extpid":32124
+	},
+	{
+		"sourcename":"External Render Processes",
+		"message":"[Redshift] License path: /Users/timour/redshift",
+		"time":1784576493.05097914,
+		"threadid":3,
+		"extidentifier":"/obj/lopnet1/usdrender_rop1",
+		"extpid":32124
+	},
+	{
+		"sourcename":"External Render Processes",
+		"message":"[Redshift] Plugin configured for a cmdline session",
+		"time":1784576493.05097914,
+		"threadid":3,
+		"extidentifier":"/obj/lopnet1/usdrender_rop1",
+		"extpid":32124
+	},
+	{
+		"sourcename":"External Render Processes",
+		"message":"[Redshift] Redshift for Houdini plugin version 2026.7.1 (Jun 10 2026 20:55:40)",
+		"time":1784576493.05229306,
+		"threadid":3,
+		"extpid":32123
+	},
+	{
+		"sourcename":"External Render Processes",
+		"message":"[Redshift] Plugin compile time HDK version: 21.0.729",
+		"time":1784576493.05229306,
+		"threadid":3,
+		"extpid":32123
+	},
+	{
+		"sourcename":"External Render Processes",
+		"message":"[Redshift] Houdini host version: 21.0.778",
+		"time":1784576493.05229306,
+		"threadid":3,
+		"extpid":32123
+	},
+	{
+		"sourcename":"External Render Processes",
+		"message":"[Redshift] Houdini and the Redshift plugin versions don't match. Houdini or Redshift may become unstable, with features not available or crashes at render time",
+		"time":1784576493.05229306,
+		"threadid":3,
+		"extpid":32123
+	},
+	{
+		"sourcename":"External Render Processes",
+		"message":"The Houdini (21.0.778) and Redshift plugin (21.0.729) versions don't match. Houdini or Redshift may become unstable, with not available features or crashes at render time.[Redshift] Plugin dso/dll and config path: /Applications/Maxon Redshift 2026/Plugins/Houdini/21.0.729_arm64/dso",
+		"time":1784576493.05229306,
+		"threadid":3,
+		"extpid":32123
+	},
+	{
+		"sourcename":"External Render Processes",
+		"message":"[Redshift] Core data path: /Applications/Maxon Redshift 2026",
+		"time":1784576493.05229306,
+		"threadid":3,
+		"extpid":32123
+	},
+	{
+		"sourcename":"External Render Processes",
+		"message":"[Redshift] Local data path: /Users/timour/redshift",
+		"time":1784576493.05229306,
+		"threadid":3,
+		"extpid":32123
+	},
+	{
+		"sourcename":"External Render Processes",
+		"message":"[Redshift] Procedurals path: /Applications/Maxon Redshift 2026/procedurals",
+		"time":1784576493.05229306,
+		"threadid":3,
+		"extpid":32123
+	},
+	{
+		"sourcename":"External Render Processes",
+		"message":"[Redshift] Preferences file path: /Users/timour/redshift/preferences.xml",
+		"time":1784576493.05229306,
+		"threadid":3,
+		"extpid":32123
+	},
+	{
+		"sourcename":"External Render Processes",
+		"message":"[Redshift] License path: /Users/timour/redshift",
+		"time":1784576493.05229306,
+		"threadid":3,
+		"extpid":32123
+	},
+	{
+		"sourcename":"External Render Processes",
+		"message":"[Redshift] Plugin configured for a cmdline session",
+		"time":1784576493.05229306,
+		"threadid":3,
+		"extpid":32123
+	},
+	{
+		"sourcename":"External Render Processes",
+		"message":"2026-07-20 21:41:33.966 system_profiler[32138:11337280] hw.cpufamily: 0x1b588bb3",
+		"time":1784576493.46328497,
+		"threadid":3,
+		"extidentifier":"/obj/lopnet1/usdrender_rop1",
+		"extpid":32124
+	},
+	{
+		"sourcename":"External Render Processes",
+		"message":"2026-07-20 21:41:33.966 system_profiler[32138:11337280] hw.cpufamily: 0x1b588bb3",
+		"time":1784576493.46455908,
+		"threadid":3,
+		"extpid":32123
+	},
+	{
+		"sourcename":"External Render Processes",
+		"message":"[Redshift] Closing the RS instance. End of the plugin log system.",
+		"time":1784576501.209203,
+		"threadid":3,
+		"extidentifier":"/obj/lopnet1/usdrender_rop1",
+		"extpid":32124
+	},
+	{
+		"sourcename":"External Render Processes",
+		"message":"[Redshift] Closing the RS instance. End of the plugin log system.",
+		"time":1784576501.2104671,
+		"threadid":3,
+		"extpid":32123
+	}
+]

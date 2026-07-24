@@ -1,0 +1,126 @@
+{
+  "source": "Palette after the unmixed tube pigments Josef Albers named on the backs of his 'Homage to the Square' panels (1950-1976); combinations composed after the Homage structure (three or four nested squares - hence 3- and 4-color sets here) and the perception studies in 'Interaction of Color' (1963). Hues are interpretive approximations.",
+  "palette": [
+    { "name": "Off-White", "hex": "#ece7d8" },
+    { "name": "Naples Yellow", "hex": "#e8d47f" },
+    { "name": "Cadmium Yellow", "hex": "#eebd2a" },
+    { "name": "Yellow Ochre", "hex": "#c08f3a" },
+    { "name": "Cadmium Orange", "hex": "#dd7b26" },
+    { "name": "Cadmium Red", "hex": "#bc3a2a" },
+    { "name": "Alizarin Crimson", "hex": "#8c3040" },
+    { "name": "Sap Green", "hex": "#7c8a4d" },
+    { "name": "Viridian", "hex": "#3f7c6a" },
+    { "name": "Cerulean", "hex": "#5590b4" },
+    { "name": "Ultramarine", "hex": "#3a5586" },
+    { "name": "Pale Grey", "hex": "#d5d1c6" },
+    { "name": "Warm Grey", "hex": "#a9a294" },
+    { "name": "Near-Black", "hex": "#2e2d2a" }
+  ],
+  "combinations": [
+    {
+      "id": 1,
+      "name": "Homage: Yellows",
+      "note": "Three yellows nested square in square - the same family made to breathe by nothing but adjacency.",
+      "colors": [
+        { "name": "Naples Yellow", "hex": "#e8d47f" },
+        { "name": "Cadmium Yellow", "hex": "#eebd2a" },
+        { "name": "Yellow Ochre", "hex": "#c08f3a" }
+      ]
+    },
+    {
+      "id": 2,
+      "name": "Transparence",
+      "note": "The film-color illusion: when the middle color reads as the mixture of its neighbors, the eye invents a transparent layer.",
+      "colors": [
+        { "name": "Cadmium Yellow", "hex": "#eebd2a" },
+        { "name": "Cadmium Orange", "hex": "#dd7b26" },
+        { "name": "Cadmium Red", "hex": "#bc3a2a" }
+      ]
+    },
+    {
+      "id": 3,
+      "name": "Ascending",
+      "note": "After the blue-green Homages: cool colors stacked toward light, each square lifting the next.",
+      "colors": [
+        { "name": "Ultramarine", "hex": "#3a5586" },
+        { "name": "Viridian", "hex": "#3f7c6a" },
+        { "name": "Cerulean", "hex": "#5590b4" }
+      ]
+    },
+    {
+      "id": 4,
+      "name": "Two Look Like One",
+      "note": "The famous deception: two different greys on a strong ground, pushed until the eye cannot keep them apart.",
+      "colors": [
+        { "name": "Warm Grey", "hex": "#a9a294" },
+        { "name": "Ultramarine", "hex": "#3a5586" },
+        { "name": "Pale Grey", "hex": "#d5d1c6" }
+      ]
+    },
+    {
+      "id": 5,
+      "name": "Renewed Hope",
+      "note": "After the late ochre Homages: earth colors against the dark, warmth persisting.",
+      "colors": [
+        { "name": "Yellow Ochre", "hex": "#c08f3a" },
+        { "name": "Cadmium Orange", "hex": "#dd7b26" },
+        { "name": "Near-Black", "hex": "#2e2d2a" }
+      ]
+    },
+    {
+      "id": 6,
+      "name": "Homage: Full Square",
+      "note": "The four-square format at its sunniest - light pouring inward from white to ochre.",
+      "colors": [
+        { "name": "Off-White", "hex": "#ece7d8" },
+        { "name": "Naples Yellow", "hex": "#e8d47f" },
+        { "name": "Cadmium Yellow", "hex": "#eebd2a" },
+        { "name": "Yellow Ochre", "hex": "#c08f3a" }
+      ]
+    },
+    {
+      "id": 7,
+      "name": "Homage: Reds",
+      "note": "Four reds descending into darkness - the same hue family losing light square by square.",
+      "colors": [
+        { "name": "Cadmium Orange", "hex": "#dd7b26" },
+        { "name": "Cadmium Red", "hex": "#bc3a2a" },
+        { "name": "Alizarin Crimson", "hex": "#8c3040" },
+        { "name": "Near-Black", "hex": "#2e2d2a" }
+      ]
+    },
+    {
+      "id": 8,
+      "name": "Homage: Greens",
+      "note": "The green Homages: pale ground, two greens, and blue holding the center.",
+      "colors": [
+        { "name": "Pale Grey", "hex": "#d5d1c6" },
+        { "name": "Sap Green", "hex": "#7c8a4d" },
+        { "name": "Viridian", "hex": "#3f7c6a" },
+        { "name": "Ultramarine", "hex": "#3a5586" }
+      ]
+    },
+    {
+      "id": 9,
+      "name": "Grey Steps",
+      "note": "The value scale stripped of hue - Albers' first exercise: learn to see lighter and darker before color.",
+      "colors": [
+        { "name": "Off-White", "hex": "#ece7d8" },
+        { "name": "Pale Grey", "hex": "#d5d1c6" },
+        { "name": "Warm Grey", "hex": "#a9a294" },
+        { "name": "Near-Black", "hex": "#2e2d2a" }
+      ]
+    },
+    {
+      "id": 10,
+      "name": "Blues at Dusk",
+      "note": "After the nocturnal blue Homages: cool squares sinking toward black, cerulean keeping the last light.",
+      "colors": [
+        { "name": "Cerulean", "hex": "#5590b4" },
+        { "name": "Ultramarine", "hex": "#3a5586" },
+        { "name": "Viridian", "hex": "#3f7c6a" },
+        { "name": "Near-Black", "hex": "#2e2d2a" }
+      ]
+    }
+  ]
+}
